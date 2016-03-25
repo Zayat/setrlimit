@@ -14,6 +14,7 @@ AC_PROG_CXX
 AC_PROG_CC
 AC_PROG_INSTALL
 
+PKG_CHECK_MODULES(GFLAGS, libgflags)
 PKG_CHECK_MODULES(GLOG, libglog)
 
 # Checks for libraries.

@@ -6,14 +6,33 @@
 #include <sys/user.h>
 #include <sys/wait.h>
 
+#include <gflags/gflags.h>
 #include <glog/logging.h>
 
 #include <iostream>
+
+#include "./config.h"
+
+#define RED_ZONE_BYTES 128
+
+static_assert(RED_ZONE_BYTES >= sizeof(struct rlimit),
+              "rlimit too big to use red zone");
+
+DEFINE_int32(resource, RLIMIT_CORE,
+             "the resource to raise -- by default, RLIMIT_CORE");
 
 class PtraceScope {
  public:
   PtraceScope() = delete;
   explicit PtraceScope(pid_t pid) : pid_(pid), attached_(false) {}
+
+  ~PtraceScope() {
+    if (attached_) {
+      SetRegs(orig_regs_);
+      Poke(orig_regs_.rip, orig_word_);
+      Detach();
+    }
+  }
 
   void Attach() {
     CHECK(!attached_);
@@ -26,30 +45,33 @@ class PtraceScope {
     attached_ = true;
   }
 
-  void Start() {
-    CHECK(attached_);
-    GetRegs(&orig_regs_);
-    orig_word_ = Peek(orig_regs_.rip);
-    Poke(orig_regs_.rip, 0xf050);
-    unsigned long addr = Malloc();
+  void Detach() {
+    PLOG_IF(FATAL, ptrace(PTRACE_DETACH, pid_, 0, 0))
+        << "failed to PTRACE_DETACH";
   }
 
-  unsigned long Malloc() {
-    user_regs_struct regs;
-    memcpy(&regs, &orig_regs_, sizeof(regs));
-    regs.rax = 9;                            // sys_rlimit
-    regs.rdi = 0;                            // addr
-    regs.rsi = 4096;                         // length
-    regs.rdx = PROT_READ | PROT_WRITE;       // prot
-    regs.r10 = MAP_PRIVATE | MAP_ANONYMOUS;  // flags
-    regs.r8 = -1;                            // fd
-    regs.r9 = 0;                             // offset
+  void Start() {
+    CHECK(attached_);
 
-    user_regs_struct after;
-    SingleStep(&after);
-    CHECK(after.rip == orig_regs_.rip + 2);
-    LOG(INFO) << "malloced at " << (void *)after.rax;
-    return after.rax;
+    LOG(INFO) << "getting original registers";
+    GetRegs(&orig_regs_);
+    LOG(INFO) << "getting original word at " << (void *)orig_regs_.rip;
+    orig_word_ = Peek(orig_regs_.rip);
+
+    LOG(INFO) << "preparing for syscalls" << sizeof(struct rlimit);
+    // Poke(orig_regs_.rip, 0xf050);
+    Poke(orig_regs_.rip, 0x050f);
+    LOG_IF(FATAL, GetRlimit(FLAGS_resource)) << "failed to getrlimit()";
+
+    struct rlimit rlimit;
+    for (size_t i = 0; i < sizeof(struct rlimit); i += sizeof(long)) {
+      long rslt = Peek(orig_regs_.rsp - sizeof(struct rlimit) + i);
+      memcpy(&rlimit + i, &rslt, sizeof(rslt));
+    }
+    LOG(INFO) << "rlim_cur = " << rlimit.rlim_cur
+              << ", rlim_max = " << rlimit.rlim_max;
+
+    SetRegs(orig_regs_);
   }
 
   int SingleStep(user_regs_struct *regs) {
@@ -68,7 +90,15 @@ class PtraceScope {
   int GetRlimit(int resource) {
     user_regs_struct regs;
     memcpy(&regs, &orig_regs_, sizeof(regs));
-    regs.rax = 97;  // sys_rlimit
+    regs.rax = 97;  // sys_getrlimit
+    regs.rdi = (unsigned long)resource;
+    regs.rsi = orig_regs_.rsp - sizeof(struct rlimit);
+    SetRegs(regs);
+
+    user_regs_struct after;
+    SingleStep(&after);
+    CHECK(after.rip == orig_regs_.rip + 2);
+    return after.rax;
   }
 
   void GetRegs(user_regs_struct *s) {
@@ -77,17 +107,24 @@ class PtraceScope {
         << "failed to PTRACE_GETREGS";
   }
 
+  void SetRegs(const user_regs_struct &s) {
+    CHECK(attached_);
+    PLOG_IF(FATAL, ptrace(PTRACE_SETREGS, pid_, 0, &s))
+        << "failed to PTRACE_SETREGS";
+  }
+
   long Peek(unsigned long where) {
+    DVLOG(1) << "peeking at " << (void *)where;
     errno = 0;
-    long ret = ptrace(PTRACE_PEEKTEXT, pid_, 0, where);
-    if (ret == -1 && errno) {
+    long ret = ptrace(PTRACE_PEEKTEXT, pid_, where, 0);
+    if (ret == -1 && errno != 0) {
       PLOG(FATAL) << "ptrace(PTRACE_PEEKTEXT, ..., " << (void *)where << ")";
     }
     return ret;
   }
 
   void Poke(unsigned long where, long value) {
-    PLOG_IF(FATAL, ptrace(PTRACE_POKETEXT, pid_, value, where))
+    PLOG_IF(FATAL, ptrace(PTRACE_POKETEXT, pid_, where, value))
         << "failed to PTRACE_POKETEXT";
   }
 
@@ -100,9 +137,11 @@ class PtraceScope {
 };
 
 int main(int argc, char **argv) {
+  gflags::SetUsageMessage("[OPTIONS] PID");
+  gflags::SetVersionString(VERSION);
+  gflags::ParseCommandLineFlags(&argc, &argv, true);
   google::InitGoogleLogging(argv[0]);
 
-  struct rlimit rlim;
   if (argc != 2) {
     LOG(ERROR) << "usage: " << argv[0] << " PID\n";
     return 1;
@@ -116,7 +155,7 @@ int main(int argc, char **argv) {
   PtraceScope scope(val);
   scope.Attach();
   scope.Start();
-  scope.GetRlimit(RLIMIT_CORE);
+  scope.GetRlimit(FLAGS_resource);
 
   return 0;
 }
