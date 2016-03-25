@@ -1,0 +1,14 @@
+*.in
+*.log
+*.m4
+*.o
+*.scan
+*.status
+.deps/
+Makefile
+autom4te.cache/
+build-aux/
+config.h
+configure
+setrlimit
+stamp*
