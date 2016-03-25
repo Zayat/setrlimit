@@ -81,7 +81,7 @@ class PtraceScope {
     errno = 0;
     long ret = ptrace(PTRACE_PEEKTEXT, pid_, 0, where);
     if (ret == -1 && errno) {
-      PLOG(FATAL) << "PTRACE_PEEKTEXT";
+      PLOG(FATAL) << "ptrace(PTRACE_PEEKTEXT, ..., " << (void *)where << ")";
     }
     return ret;
   }
