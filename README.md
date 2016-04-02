@@ -31,9 +31,12 @@ In the future I'd like to add a way to specify the resources as strings.
 
 ## How Safe Is This?
 
-This code makes use of the Intel x86-64 [/red-zone]. This is an esoteric feature
-and not widely used. However if you attach to a process that is currently using
-the red zone then this could corrupt its red zone stack contents.
+This code makes use of the [Intel x86-64](https://eklitzke.org/red-zone]. This
+is an esoteric feature and not widely used. However if you attach to a process
+that is currently using the red zone then this could corrupt its red zone stack
+contents.
+
+In practice this issue has not been observed.
 
 ## Background
 
