@@ -1,47 +1,72 @@
-## What Is This?
+# Setrlimit
 
-This is a C script that will use the `ptrace(2)` system call to take control of
-a process and then invoke `getrlimit(2)` and `setrlimit(2)` on that process'
-behalf, so that the limits are as high as possible.
+Increase the soft rlimit for a process to its max rlimit.
 
-## Compiling/Installing
+## Compiling
 
-If you got this from GitHub, you will need to install autotools and then run:
+From git:
 
-    ./auotogen.sh
+    ./autogen.sh  # make sure you have autoconf installed
     ./configure
     make
 
-If you got this from a tarball:
+Make a source tarball:
 
     ./configure
     make
+
+## Usage
+
+Use it like this
+
+    setrlimit <pid>
+
+If you happen to know the numeric value of an rlimit you can specify it with
+`-r` (the default is to use `RLIMIT_CORE`). For instance, on my machine
+`RLIMIT_AS` is 9 so to increase the `RLIMIT_AS` I could do
+
+    setrlimit -r 9 <pid>
+
+In the future I'd like to add a way to specify the resources as strings.
 
 ## How Safe Is This?
 
-This is safe in practice, unsafe in theory.
+This code makes use of the Intel x86-64 [/red-zone]. This is an esoteric feature
+and not widely used. However if you attach to a process that is currently using
+the red zone then this could corrupt its red zone stack contents.
 
-This uses the Intel x86-64 "red zone" for its `struct rlimit`. In theory a
-properly optimized compiler could be storing data there and this could cause
-corruption.
+## Background
 
-If you can find a program that exhibits corruption when using this, please point
-it out to me.
+There is this really weird ancient thing on Unix called rlimits. It's one of
+those things that everyone agrees isn't really a great pr of Unix (there are
+modern, better designs, but we're stuck with it). It's extra confusing because
+there are both kernel/system default rlimits as well as rlimits imposed by bash
+(which is frequently used to launch programs).
 
-## Use Case
+The basic idea is that there are a certain number of limits, things like max
+address space or max number of file locks, that can be imposed on a process.
+There is a soft limit and a hard limit.
 
-I have a system at work that works something like this:
+The hard limit can be decreased but not increased. The soft limit can be
+decreased or increased, but cannot be increased above the current hard limit.
 
-    init
-      |
-    supervisord
-    | | | | | |
-    a million children
+For an arbitrary process, the best way to look at its limits are using:
 
-The children can spawn more of their own and so forth.
+    cat /proc/PID/limits
 
-The default behavior on the process is that a process has a soft/hard infinite
-ulimit for `RLIMIT_CORE`. Something the aforementioned stack (includind the
-bundle of joy that is uwsgi) is using `setrlimit(2)` to set the soft limit for
-`RLIMIT_CORE` to 0 (but only the soft limit, the hard limit is still infinite).
-Using this script I can get core dumps again.
+A program hits a limit when it hits the soft limit (which may also be its hard
+limit). At this point the process will get various errors when trying to
+allocate things like more file descriptors or more memory.
+
+For some reason unclear to me, in the byzantine tech stack at work there's a
+process that's calls `setrlimit(2)` to set the soft limit value for
+`RLIMIT_CORE` to 0 but doesn't change the hard limit (which is infinite). I
+don't know what's doing this, if there's a setting to disable it, etc. That part
+is under investigation. But that process goes on to be the ancestor parent of a
+bunch of children, and the children inherit the soft limit of 0 effectively
+meaning that they never dump core.
+
+A lot of people don't need core dumps, but for my work it was essential. My
+original solution was to use GDB to attach to a process and increase the limits.
+That got cumbersome so that was turned into a set of GDB scripts that turned
+into this C program.
