@@ -27,7 +27,9 @@ If you happen to know the numeric value of an rlimit you can specify it with
 
     setrlimit -r 9 <pid>
 
-In the future I'd like to add a way to specify the resources as strings.
+In the future I'd like to add a way to specify the resources as strings. If
+you're really desperate, there's probably a file `/usr/include/bits/resource.h`
+that has the raw definitions.
 
 ## How Safe Is This?
 
