@@ -42,5 +42,6 @@ The children can spawn more of their own and so forth.
 
 The default behavior on the process is that a process has a soft/hard infinite
 ulimit for `RLIMIT_CORE`. Something the aforementioned stack (includind the
-bundle of joy that is uwsgi) is using `setrlimit(2)` to set `RLIMIT_CORE` to 0.
-But only the soft limit, the hard limit is still infinite.
+bundle of joy that is uwsgi) is using `setrlimit(2)` to set the soft limit for
+`RLIMIT_CORE` to 0 (but only the soft limit, the hard limit is still infinite).
+Using this script I can get core dumps again.
