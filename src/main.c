@@ -35,6 +35,10 @@
 #include <string.h>
 #include <unistd.h>
 
+#ifdef HAVE_CONFIG_H
+#include "./config.h"
+#endif
+
 static_assert(sizeof(struct rlimit) > sizeof(long), "rlimit too small");
 static_assert(sizeof(struct rlimit) % sizeof(long) == 0, "rlimit not aligned");
 
@@ -127,7 +131,7 @@ int main(int argc, char **argv) {
   int resource = RLIMIT_CORE;
   opterr = 0;
 
-  while ((c = getopt(argc, argv, "hvr:")) != -1) {
+  while ((c = getopt(argc, argv, "hvVr:")) != -1) {
     switch (c) {
       case 'h':
         goto usage;
@@ -139,6 +143,11 @@ int main(int argc, char **argv) {
       case 'v':
         verbose = 1;
         break;
+      case 'V':
+        puts(PACKAGE_STRING);
+        return 0;
+        break;
+
       case '?':
         if (isprint(optopt)) {
           ulog_err("unexpectedly got option %c", optopt);
