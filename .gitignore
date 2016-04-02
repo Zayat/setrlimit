@@ -1,0 +1,5 @@
+*.m4
+build-aux/
+Makefile
+src/config.h
+src/setrlimit

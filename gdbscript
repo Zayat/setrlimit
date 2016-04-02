@@ -1,8 +1,0 @@
-set $addr = $rsp - sizeof(struct rlimit)
-call getrlimit(RLIMIT_CORE, $addr)
-set $cur = ((struct rlimit*)$addr)->rlim_cur
-set $max = ((struct rlimit*)$addr)->rlim_max
-if $max > $cur
-  set ((struct rlimit*)$addr)->rlim_cur = $max
-  call setrlimit(RLIMIT_CORE, $addr)
-end
