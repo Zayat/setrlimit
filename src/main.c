@@ -96,9 +96,9 @@ int main(int argc, char **argv) {
   ulog_info("final value for resource is %d", resource);
 
   int status = 0;
-  while (true) {
+  while (optind < argc) {
     errno = 0;
-    long maybe_pid = strtol(argv[optind], NULL, 10);
+    long maybe_pid = strtol(argv[optind++], NULL, 10);
     if (errno) {
       perror("failed to call strtol()");
     }
@@ -107,9 +107,6 @@ int main(int argc, char **argv) {
     }
 
     status |= enforce((pid_t)maybe_pid, resource);
-    if (++optind == argc) {
-      break;
-    }
   }
 
   return status;
