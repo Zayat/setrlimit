@@ -1,3 +1,5 @@
+// Copyright Evan Klitzke <evan@eklitzke.org>, 2016
+//
 // This file is part of setrlimit.
 //
 // Setrlimit is free software: you can redistribute it and/or modify

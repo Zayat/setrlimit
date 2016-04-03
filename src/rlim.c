@@ -28,32 +28,41 @@
 
 static const char *tbl[] = {"CPU",   "FSIZE",   "DATA",  "STACK",
                             "CORE",  "RSS",     "NPROC", "BOFILE",
-                            "OFILE", "MEMLOCK", "AS"};
-const size_t kNrLimit = 10;
+                            "OFILE", "MEMLOCK", "AS",    NULL};
 
+// find the numeric value for a rlimit name
 int rlimit_by_name(const char *name) {
-  ulog_info("in rlimit_by_name with name = %p %s", name, name);
-  if (name == NULL || name[0] == '\0') {
-    return -1;
-  }
-
   const size_t len = strlen(name);
   char *upper_name = malloc(len + 1);
   upper_name[len + 1] = '\0';
   for (size_t i = 0; i < len; i++) {
     upper_name[i] = toupper(name[i]);
   }
-  for (size_t i = 0; i < kNrLimit; i++) {
-    if (strcmp(upper_name, tbl[i]) == 0) {
-      if (strcmp(upper_name, tbl[i]) == 0) {
-        free(upper_name);
-        return i;
-      }
-    }
-  }
 
-  free(upper_name);
-  return -1;
+  size_t off = 0;
+  while (true) {
+    const char *s = (const char *)*(tbl + off);
+    if (s == NULL) {
+      return -1;
+    }
+    if (strcmp(upper_name, s) == 0) {
+      return (int)off;
+    }
+    off++;
+  }
+}
+
+// read all of the rlimits and print them with ulog_info
+void print_rlimits(void) {
+  size_t off = 0;
+  while (true) {
+    const char *s = (const char *)*(tbl + off);
+    if (s == NULL) {
+      break;
+    }
+    ulog_info("%s (%zd)", s, off);
+    off++;
+  }
 }
 
 void read_rlimit(pid_t pid, unsigned long where, struct rlimit *rlim) {

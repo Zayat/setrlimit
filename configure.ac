@@ -2,7 +2,7 @@
 # Process this file with autoconf to produce a configure script.
 
 AC_PREREQ([2.69])
-AC_INIT([setrlimit], [0.1], [evan@eklitzke.org])
+AC_INIT([statsrelay], m4_esyscmd([tr -d '\n' < VERSION]), [evan@eklitzke.org])
 AC_CONFIG_AUX_DIR([build-aux])
 AC_CONFIG_HEADERS([src/config.h])
 AC_CONFIG_MACRO_DIR([m4])
@@ -29,4 +29,5 @@ AC_CHECK_FUNCS([strtol])
 
 AC_CONFIG_FILES([Makefile
                  src/Makefile])
+AC_REVISION([mr_esyscmd([git describe --always])])
 AC_OUTPUT

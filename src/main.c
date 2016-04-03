@@ -72,13 +72,17 @@ int main(int argc, char **argv) {
   int c;
   int resource = -1;
   bool verbose = false;
+  bool do_list = false;
   opterr = 0;
   char *resource_str = NULL;
 
-  while ((c = getopt(argc, argv, "hover:")) != -1) {
+  while ((c = getopt(argc, argv, "hlr:vV")) != -1) {
     switch (c) {
       case 'h':
         goto usage;
+        break;
+      case 'l':
+        do_list = true;
         break;
       case 'r':
         resource_str = optarg;  // not a copy!
@@ -101,11 +105,16 @@ int main(int argc, char **argv) {
     }
   }
 
+  ulog_init(verbose);
+
+  if (do_list) {
+    print_rlimits();
+    return 0;
+  }
+
   if (argc - optind != 1) {
     goto usage;
   }
-
-  ulog_init(verbose);
 
   if (resource_str != NULL) {
     resource = rlimit_by_name(resource_str);
