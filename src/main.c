@@ -1,85 +1,54 @@
 // Copyright Evan Klitzke <evan@eklitzke.org>, 2016
 //
-// This program is free software: you can redistribute it and/or modify
+// This file is part of setrlimit.
+//
+// Setrlimit is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation, either version 3 of the License, or
 // (at your option) any later version.
 //
-// This program is distributed in the hope that it will be useful,
+// Setrlimit is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 // GNU General Public License for more details.
 //
 // You should have received a copy of the GNU General Public License
-// along with this program.  If not, see <http://www.gnu.org/licenses/>.
+// along with Setrlimit.  If not, see <http://www.gnu.org/licenses/>.
 
 #ifndef _XOPEN_SOURCE
 #define _XOPEN_SOURCE 700
 #endif
 
-#include <signal.h>
-
 #include <sys/ptrace.h>
-#include <sys/types.h>
 #include <sys/wait.h>
 #include <sys/resource.h>
-#include <sys/syscall.h>
 #include <sys/user.h>
 
 #include <assert.h>
 #include <ctype.h>
 #include <errno.h>
-#include <stdarg.h>
+#include <getopt.h>
+#include <signal.h>
+#include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <unistd.h>
+#include <syscall.h>
 
 #ifdef HAVE_CONFIG_H
 #include "./config.h"
 #endif
 
-static_assert(sizeof(struct rlimit) > sizeof(long), "rlimit too small");
-static_assert(sizeof(struct rlimit) % sizeof(long) == 0, "rlimit not aligned");
+#include "./ulog.h"
+#include "./rlim.h"
 
-static int verbose = 0;
-static pid_t pid = -1;
-
-static void ulog_info(const char *fmt, ...) {
-  if (verbose) {
-    printf("INFO: ");
-
-    va_list args;
-    va_start(args, fmt);
-    vfprintf(stdout, fmt, args);
-    va_end(args);
-
-    putchar('\n');
-  }
-}
-
-static void ulog_err(const char *fmt, ...) {
-  printf("ERROR: ");
-
-  va_list args;
-  va_start(args, fmt);
-  vfprintf(stderr, fmt, args);
-  va_end(args);
-
-  putc('\n', stderr);
-
-  exit(1);
-}
-
-static void do_wait() {
+static void do_wait(pid_t pid) {
   int status;
   pid_t waited = waitpid(pid, &status, 0);
   if (waited == (pid_t)-1) {
     perror("waitpid()");
     exit(1);
   }
-  ulog_info("exited %d signaled %d stopped %d", WIFEXITED(status),
-            WIFSIGNALED(status), WIFSTOPPED(status));
   assert(waited != (pid_t)-1);
   assert(waited == pid);
 
@@ -99,49 +68,23 @@ static void do_wait() {
   }
 }
 
-static void read_rlimit(unsigned long where, struct rlimit *rlim) {
-  const size_t sz = sizeof(struct rlimit) / sizeof(long);
-  for (size_t i = 0; i < sz; i++) {
-    errno = 0;
-    long word = ptrace(PTRACE_PEEKTEXT, pid, where + i * sizeof(long), 0);
-    ulog_info("tried to peek for pid %d at where = %p, final = %p", pid,
-              (void *)where, (void *)(where + i * sizeof(long)));
-    if (word == -1 && errno) {
-      perror("ptrace(PTRACE_PEEKTEXT, ...)");
-      exit(1);
-    }
-    memcpy((long *)(rlim) + i, &word, sizeof(word));
-  }
-}
-
-static void poke_rlimit(unsigned long where, struct rlimit *rlim) {
-  const size_t sz = sizeof(struct rlimit) / sizeof(long);
-  for (size_t i = 0; i < sz; i++) {
-    long word;
-    memcpy(&word, (long *)(rlim) + i, sizeof(word));
-    ulog_info("tried to poke %ld at %p", word, where + i * sizeof(long));
-    if (ptrace(PTRACE_POKETEXT, pid, where + i * sizeof(long), word)) {
-      perror("ptrace(PTRACE_POKETEXT...)");
-    }
-  }
-}
-
 int main(int argc, char **argv) {
   int c;
-  int resource = RLIMIT_CORE;
+  int resource = -1;
+  bool verbose = false;
   opterr = 0;
+  char *resource_str = NULL;
 
-  while ((c = getopt(argc, argv, "hvVr:")) != -1) {
+  while ((c = getopt(argc, argv, "hover:")) != -1) {
     switch (c) {
       case 'h':
         goto usage;
         break;
       case 'r':
-        errno = 0;
-        resource = strtol(argv[optind], NULL, 10);
+        resource_str = optarg;  // not a copy!
         break;
       case 'v':
-        verbose = 1;
+        verbose = true;
         break;
       case 'V':
         puts(PACKAGE_STRING);
@@ -162,6 +105,23 @@ int main(int argc, char **argv) {
     goto usage;
   }
 
+  ulog_init(verbose);
+
+  if (resource_str != NULL) {
+    resource = rlimit_by_name(resource_str);
+    if (resource == -1) {
+      errno = 0;
+      resource = strtol(argv[optind], NULL, 10);
+    }
+  }
+
+  if (resource < 0) {
+    ulog_info("reluctantly setting resource to RLIMIT_CORE");
+    resource = RLIMIT_CORE;
+  }
+
+  ulog_info("final value for resource is %d", resource);
+
   errno = 0;
   long maybe_pid = strtol(argv[optind], NULL, 10);
   if (errno) {
@@ -171,7 +131,8 @@ int main(int argc, char **argv) {
     ulog_err("cowardly refusing to trace pid %ld", maybe_pid);
   }
 
-  pid = (pid_t)maybe_pid;
+  pid_t pid = (pid_t)maybe_pid;
+  ulog_info("pid is %d", pid);
   if (ptrace(PTRACE_SEIZE, pid, 0, PTRACE_O_TRACESYSGOOD)) {
     perror("ptrace(PRACE_SEIZE, ...)");
     return 1;
@@ -182,7 +143,7 @@ int main(int argc, char **argv) {
     return 1;
   }
 
-  do_wait();
+  do_wait(pid);
 
   struct user_regs_struct orig;
   if (ptrace(PTRACE_GETREGS, pid, 0, &orig)) {
@@ -226,7 +187,7 @@ int main(int argc, char **argv) {
     return 1;
   }
 
-  do_wait();
+  do_wait(pid);
 
   ulog_info("single step succeeded, trying to get regs");
   if (ptrace(PTRACE_GETREGS, pid, 0, &new_regs)) {
@@ -243,9 +204,8 @@ int main(int argc, char **argv) {
   }
 
   struct rlimit rlim;
-  read_rlimit(orig.rsp - sizeof(struct rlimit), &rlim);
-
-  ulog_info("rlim_cur = %l, rlim_max = %l, increasing", rlim.rlim_cur,
+  read_rlimit(pid, new_regs.rsp - sizeof(struct rlimit), &rlim);
+  ulog_info("rlim.rlim_cur = %ld, rlim.rlim_max = %ld", rlim.rlim_cur,
             rlim.rlim_max);
 
   if (rlim.rlim_cur == rlim.rlim_max) {
@@ -253,7 +213,7 @@ int main(int argc, char **argv) {
               rlim.rlim_cur);
   } else {
     rlim.rlim_cur = rlim.rlim_max;
-    poke_rlimit(orig.rsp - sizeof(struct rlimit), &rlim);
+    poke_rlimit(pid, orig.rsp - sizeof(struct rlimit), &rlim);
 
     memcpy(&new_regs, &orig, sizeof(new_regs));
     new_regs.rax = SYS_setrlimit;                         // sys_setrlimit
@@ -272,7 +232,7 @@ int main(int argc, char **argv) {
       return 1;
     }
 
-    do_wait();
+    do_wait(pid);
 
     ulog_info("single step succeeded, trying to get regs");
     if (ptrace(PTRACE_GETREGS, pid, 0, &new_regs)) {

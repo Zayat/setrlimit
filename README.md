@@ -21,15 +21,12 @@ Use it like this
 
     setrlimit <pid>
 
-If you happen to know the numeric value of an rlimit you can specify it with
-`-r` (the default is to use `RLIMIT_CORE`). For instance, on my machine
-`RLIMIT_AS` is 9 so to increase the `RLIMIT_AS` I could do
+The default behavior if to change the value for `RLIMIT_CORE`, but you can
+change other limits for a process as well. For instance, you could do:
 
-    setrlimit -r 9 <pid>
+    serlimit -r nfiles <pid>
 
-In the future I'd like to add a way to specify the resources as strings. If
-you're really desperate, there's probably a file `/usr/include/bits/resource.h`
-that has the raw definitions.
+And this would increase the `RLIMIT_NFILES` soft limit for pid.
 
 ## How Safe Is This?
 
@@ -38,7 +35,7 @@ is an esoteric feature and not widely used. However if you attach to a process
 that is currently using the red zone then this could corrupt its red zone stack
 contents.
 
-In practice this issue has not been observed.
+In practice this issue has not been observed. **tl;dt** this is safe.
 
 ## Background
 
