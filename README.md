@@ -28,6 +28,11 @@ change other limits for a process as well. For instance, you could do:
 
 And this would increase the `RLIMIT_NFILES` soft limit for pid.
 
+## Portability
+
+This has only been tested on 64-bit Linux. It probably won't work on 32-bit
+Linux without changes.
+
 ## How Safe Is This?
 
 This code makes use of the [Intel x86-64](https://eklitzke.org/red-zone]. This
@@ -72,3 +77,8 @@ A lot of people don't need core dumps, but for my work it was essential. My
 original solution was to use GDB to attach to a process and increase the limits.
 That got cumbersome so that was turned into a set of GDB scripts that turned
 into this C program.
+
+## Copyright / Licensing
+
+Notices are in all of the software files, but the tl;dr is this project is
+released under the terms of the GPL v3 (or later).
