@@ -22,11 +22,6 @@
 static_assert(sizeof(struct rlimit) > sizeof(long), "rlimit too small");
 static_assert(sizeof(struct rlimit) % sizeof(long) == 0, "rlimit not aligned");
 
-static const char *rlimit_tbl[];
-static const size_t rlimit_tbl_sz;
-
-extern const size_t kNrLimit;
-
 // This looks up an RLIMIT by name. For instance:
 //
 //  rlimit_by_name("core") -> 4
