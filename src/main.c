@@ -112,6 +112,6 @@ int main(int argc, char **argv) {
   return status;
 
 usage:
-  fprintf(stderr, "usage: %s: PID\n", argv[0]);
+  fprintf(stderr, "usage: %s: PID...\n", argv[0]);
   return 1;
 }
