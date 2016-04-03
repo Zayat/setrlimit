@@ -18,13 +18,15 @@ AM_PROG_CC_C_O
 # Checks for libraries.
 
 # Checks for header files.
-AC_CHECK_HEADERS([stdlib.h string.h unistd.h])
+AC_CHECK_HEADERS([stdlib.h string.h])
 
 # Checks for typedefs, structures, and compiler characteristics.
+AC_CHECK_HEADER_STDBOOL
 AC_TYPE_PID_T
 AC_TYPE_SIZE_T
 
 # Checks for library functions.
+AC_FUNC_MALLOC
 AC_CHECK_FUNCS([strtol])
 
 AC_CONFIG_FILES([Makefile

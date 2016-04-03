@@ -29,6 +29,7 @@
 #endif
 
 #include "./enforce.h"
+#include "./proctree.h"
 #include "./ulog.h"
 #include "./rlim.h"
 
@@ -108,6 +109,8 @@ int main(int argc, char **argv) {
 
     status |= enforce((pid_t)maybe_pid, resource);
   }
+
+  list_processes(1);
 
   return status;
 

@@ -17,11 +17,34 @@
 
 #include "./ulog.h"
 
+#include <ctype.h>
 #include <stdarg.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 
 static bool ulog_verbose = 0;
+
+// this does something naughty and trims trailing whitespace (esp. newlines form
+// format strings)
+inline bool trim_fmt(const char *fmt) {
+  bool didit = false;
+  const size_t sz = strlen(fmt);
+  char *mut_fmt = (char *)fmt;
+
+  size_t i = sz - 1;
+  while (true) {
+    if (isspace(mut_fmt[i])) {
+      mut_fmt[i] = '\0';
+      didit = true;
+    }
+    if (i == 0) {
+      break;
+    }
+    i--;
+  }
+  return didit;
+}
 
 void ulog_init(bool verbose) { ulog_verbose = verbose; }
 
@@ -31,6 +54,7 @@ void ulog_info(const char *fmt, ...) {
 
     va_list args;
     va_start(args, fmt);
+    trim_fmt(fmt);
     vfprintf(stdout, fmt, args);
     va_end(args);
 
@@ -43,6 +67,7 @@ void ulog_err(const char *fmt, ...) {
 
   va_list args;
   va_start(args, fmt);
+  trim_fmt(fmt);
   vfprintf(stderr, fmt, args);
   va_end(args);
 
