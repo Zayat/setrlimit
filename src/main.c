@@ -96,7 +96,7 @@ int main(int argc, char **argv) {
   ulog_info("final value for resource is %d", resource);
 
   int status = 0;
-  while (optind++ < argc) {
+  while (true) {
     errno = 0;
     long maybe_pid = strtol(argv[optind], NULL, 10);
     if (errno) {
@@ -107,6 +107,9 @@ int main(int argc, char **argv) {
     }
 
     status |= enforce((pid_t)maybe_pid, resource);
+    if (++optind == argc) {
+      break;
+    }
   }
 
   return status;
