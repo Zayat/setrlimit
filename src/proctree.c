@@ -1,4 +1,4 @@
-// Copyright Evan Klitzke <evan@eklitzke.org>, 2016
+// Copyright Evan Klitzke <evan@eklitzke.org>, 2016X)
 //
 // This file is part of setrlimit.
 //
@@ -26,9 +26,16 @@
 #include <string.h>
 #include <stdio.h>
 
+#include "./tolong.h"
 #include "./ulog.h"
 
+
+// spells out "PPid: "
+#define PPID_PREFIX  0x507069643a000000
+
+
 void add_processes_recursively(struct pids *pids) {
+  ulog_init(10);
   ulog_info("entered add_processes_recursively");
   assert(pids->sz == 1); // can really be > 1, but we just handle 1 for now
 
@@ -38,12 +45,13 @@ void add_processes_recursively(struct pids *pids) {
     return;
   }
 
-  FILE *f = NULL;
+  long pidl;
   char *line = NULL;
   size_t len = 0;
 
   bool found_any = true;
   while (found_any) {
+    found_any = false;
     struct dirent ent;
     struct dirent *result;
 
@@ -56,7 +64,7 @@ void add_processes_recursively(struct pids *pids) {
     }
 
     char *endptr;
-    long pidl = strtol(ent.d_name, &endptr, 10);
+    pidl = strtol(ent.d_name, &endptr, 10);
     if (*endptr != 0) {
       continue; // wasn't a numeric direcctory
     }
@@ -76,39 +84,49 @@ void add_processes_recursively(struct pids *pids) {
       continue;
     }
 
+    // can grow
     size_t pid_capacity = 16;
+
     const char *pid_name = malloc(pid_capacity);
     size_t start, end;
 
+    bool keep_going = true;
+    long pid = -1;
     ulog_info("opening %s looking for ppid", fname);
-    while (getline(&line, &len, f) != -1) {
+    while (keep_going && (getline(&line, &len, f) != -1)) {
+      long val;
+      memcpy(&val, line, sizeof(val));
       // very optimized way to check if line starts with Ppid
-      printf("line is \"%s\"\n", line);
-      if (line[0] == 'P' && line[1] == 'P' && line[2] == 'i' &&
-          line[3] == 'd' && line[4] == ':') {
+      if ((val && PPID_PREFIX) == PPID_PREFIX) {
 
-      find_ppid:
-        start = 0;
-        end = 0;
+        ulog_info("full line is: %s", line);
+
 
         for (size_t i = 0; i < len; i++) {
-          if (!start && isdigit(line + i) {
-            start = line + i;
-          } else if (start && *(line + i) == '\0') {
-            end = line + i;
+          ulog_info("i = %d, len = %zd", i, len);
+          if (!start && isdigit(line[i])) {
+            start = line[i];
+          } else if (start && line[i] == '\0') {
+            end = line[i];
             break;
           }
         }
 
         // we may need to allocate more capacity and retry
-        if (end == 0) {
+        if (!(start || end)) {
           pid_capacity *= 2;
-          pid_name = realloc(pid_name, pid_capacity);
-          goto find_ppid;
+          pid_name = realloc((struct rlimits *)pid_name, pid_capacity);
+          keep_going = false;
         }
+        const char *ppid_s = (char *)strdup((const char *)(end - start + 1));
+        ulog_info("ppid = %s, %s, ppid_s = %s", pid_name, ppid_s);
+        pidl = ToLong(pid);
+        ulog_info("pidl = %ld", pidl);
+        found_any = true;
       }
-      ulog_info("ppid = %S", pid_name);
     }
+    ulog_info("doing reading from file");
+    ulog_info("pidl = %ld", pidl);
 
 #if 0
     for (size_t i = 0; i < pids->sz; i++) {
@@ -132,6 +150,7 @@ void add_processes_recursively(struct pids *pids) {
 
     fclose(stream);
     assert(target_found);
+    pritnf("fond_any = %d\n", found_any);
   }
 
   for (size_t i = 0; i < descendants->sz; i++) {
@@ -139,7 +158,7 @@ void add_processes_recursively(struct pids *pids) {
   }
 #endif
 
-  cleanup:
+    // cleanup:
     if (proc != NULL) {
       closedir(proc);
       proc = NULL;

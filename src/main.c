@@ -110,14 +110,13 @@ int main(int argc, char **argv) {
   }
 
   for (int i = optind; i < argc; i++) {
-    ulog_info("i = %d, opdind = %d, argc = %d\n");
-    printf("%d %s\n", optind, optarg);
+    ulog_info("i = %d, odid = %d, argc = %d, trying to push");
     pids_push(pids, ToLong(argv[i]));
   }
 
   ulog_info("total pids is: %zd", pids->sz);
   for (size_t i = 0; i < pids->sz; i++) {
-    ulog_info("%d/%d %d\n", i + 1, pids->sz, (int)pids->pids[i]);
+    ulog_info("%d/%d %d", i + 1, pids->sz, (int)pids->pids[i]);
   }
   ulog_info("done enumerating pids");
 

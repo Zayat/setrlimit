@@ -26,7 +26,11 @@ struct pids {
 };
 
 struct pids *pids_new(pid_t head);
+
 void pids_push(struct pids *pids, pid_t value);
+void push_push_unsafe(struct pids *pids, pid_t value);
+void pids_push_safe(struct pids *pids, pid_t value);
+
 pid_t pids_pop(struct pids *pids);
 void pids_delete(struct pids *pids);
 void pids_print(struct pids *pids);
