@@ -29,55 +29,21 @@
 
 #include "./ulog.h"
 
-struct pids* pids_new(pid_t head) {
-  struct pids* pids = malloc(sizeof(struct pids));
-  pids->sz = 1;
-  pids->cap = 4;
-  pids->pids = malloc(pids->cap * sizeof(pid_t));
-  pids->pids[0] = head;
-  return pids;
-}
-
-void pids_push(struct pids* pids, pid_t value) {
-  if (pids->sz == pids->cap) {
-    pids->cap >>= 1;
-    pids->pids = realloc(pids->pids, pids->cap * sizeof(pid_t));
-  }
-  pids->pids[pids->sz++] = value;
-}
-
-pid_t pids_pop(struct pids* pids) {
-  assert(pids->sz);
-  pid_t ret = pids->pids[0];
-  pids->sz--;
-  memmove(pids->pids, pids->pids + 1, pids->sz);
-  if (pids->cap > (pids->sz * 2)) {
-    pids->cap /= 2;
-    pids->pids = realloc(pids->pids, pids->cap);
-  }
-  return ret;
-}
-
-void pids_delete(struct pids* pids) {
-  free(pids->pids);
-  free(pids);
-}
-
 // This solution is O(N^2) (the ideal solution is O(N log n) but is easy to
 // understand and doesn't use any complicated data structures.
-struct pids* list_processes(pid_t head) {
+struct pids *list_processes(pid_t head) {
   ulog_info("in list_processes for %d", head);
-  DIR* proc = opendir("/proc");
+  DIR *proc = opendir("/proc");
   if (proc == NULL) {
     perror("failed to opendir(/proc)");
     return NULL;
   }
 
   // this is a list of all pids we care about
-  struct pids* targets = pids_new(head);
-  struct pids* descendants = pids_new(head);  // includes the head
+  struct pids *targets = pids_new(head);
+  struct pids *descendants = pids_new(head); // includes the head
 
-  char* line = NULL;
+  char *line = NULL;
   size_t len = 0;
 
   while (targets->sz) {
@@ -85,21 +51,21 @@ struct pids* list_processes(pid_t head) {
     bool target_found = false;
     ulog_info("targets->sz = %d", targets->sz);
     struct dirent ent;
-    struct dirent* result;
+    struct dirent *result;
 
     readdir_r(proc, &ent, &result);
     if (result == NULL) {
       ulog_info(
           "failed to readdir_r while still finding ancestors, rewinding;");
-      rewinddir(proc);  // amazinly, this always works
+      rewinddir(proc); // amazinly, this always works
       continue;
     }
     ulog_info("did not rewind");
 
-    char* endptr;
+    char *endptr;
     long pidl = strtol(ent.d_name, &endptr, 10);
     if (*endptr != 0) {
-      continue;  // wasn't a numeric direcctory
+      continue; // wasn't a numeric direcctory
     }
 
     assert(pidl >= 0);
@@ -118,7 +84,7 @@ struct pids* list_processes(pid_t head) {
     strcat(fname, "/status");
 
     ulog_info("scanning fname = %s", fname);
-    FILE* stream = fopen(fname, "r");
+    FILE *stream = fopen(fname, "r");
     if (stream == NULL) {
       perror("fopen()");
       continue;

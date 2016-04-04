@@ -5,9 +5,10 @@ PROCTREE = proctree.c
 ULOG = ulog.c
 RLIM = rlim.c
 TOLONG = tolong.c
+PIDS = pids.c
 
 bin_PROGRAMS = setrlimit
 
-setrlimit_SOURCES = main.c $(ULOG) $(RLIM) $(ENFORCE) $(PROCTREE) $(TOLONG)
+setrlimit_SOURCES = main.c $(ULOG) $(RLIM) $(ENFORCE) $(PROCTREE) $(TOLONG) $(PIDS)
 
-noinst_HEADERS = enforce.h proctree.h rlim.h tolong.h ulog.h
+noinst_HEADERS = enforce.h pids.h proctree.h rlim.h tolong.h ulog.h
