@@ -19,5 +19,9 @@
 
 void ulog_init(int min_level);
 
+int ulog_get_log_level(void);
+void ulog_set_log_level(int level);
+
+void ulog_debug(const char *fmt, ...);
 void ulog_info(const char *fmt, ...);
 void ulog_err(const char *fmt, ...);

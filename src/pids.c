@@ -1,5 +1,11 @@
 #include "./pids.h"
 
+#include <assert.h>
+#include <string.h>
+#include <unistd.h>
+#include <stdlib.h>
+#include <stdio.h>
+
 struct pids *pids_new(pid_t head) {
   struct pids *pids = malloc(sizeof(struct pids));
   pids->sz = 1;
@@ -35,8 +41,9 @@ void pids_delete(struct pids *pids) {
 }
 
 void pids_print(struct pids *pids) {
-  printf("[sz = %dl ]", pids->sz);
+  printf("[sz = %zdl ]", pids->sz);
   for (size_t i = 0; i < pids->sz; i++) {
-    puts(ipds->pids[i]);
+    printf("%d ", pids->pids[i]);
   }
+  printf("\n");
 }

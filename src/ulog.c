@@ -13,7 +13,7 @@
 // GNU General Public License for more details.
 //
 // You should have received a copy of the GNU General Public License
-// along with Setrlimit.  If not, see <http://www.gnu.org/licenses/>.
+// alo.If not, see < http : // www.gnu.org/licenses/>.
 
 #include "./ulog.h"
 
@@ -23,21 +23,22 @@
 #include <stdlib.h>
 #include <string.h>
 
-static int ulog_level = 0;
+static int ulog_level = 10;
 
 void ulog_init(int min_level) { ulog_level = min_level; }
 
-#define INFO_LVL(x, min_level)                   \
-  void ulog_##x(const char *fmt, ...) {          \
-    if (ulog_level && min_level >= ulog_level) { \
-      printf(#x);                                \
-      printf(": ");                              \
-      va_list args;                              \
-      va_start(args, fmt);                       \
-      vfprintf(stdout, fmt, args);               \
-      va_end(args);                              \
-      fflush(stdout);                            \
-    }                                            \
+#define INFO_LVL(x, min_level)                                                 \
+  void ulog_##x(const char *fmt, ...) {                                        \
+    if (min_level >= ulog_level) {                                             \
+      printf(#x);                                                              \
+      printf(": ");                                                            \
+      va_list args;                                                            \
+      va_start(args, fmt);                                                     \
+      vfprintf(stdout, fmt, args);                                             \
+      putchar('\n');                                                           \
+      va_end(args);                                                            \
+      fflush(stdout);                                                          \
+    }                                                                          \
   }
 
 INFO_LVL(debug, 0)

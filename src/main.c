@@ -45,33 +45,33 @@ int main(int argc, char **argv) {
 
   while ((c = getopt(argc, argv, "hlr:RvV")) != -1) {
     switch (c) {
-      case 'h':
-        goto usage;
-        break;
-      case 'l':
-        do_list = true;
-        break;
-      case 'r':
-        resource_str = optarg;  // not a copy!
-        break;
-      case 'R':
-        recursive = true;
-        break;
-      case 'v':
-        verbose = true;
-        break;
-      case 'V':
-        puts(PACKAGE_STRING);
-        return 0;
-        break;
+    case 'h':
+      goto usage;
+      break;
+    case 'l':
+      do_list = true;
+      break;
+    case 'r':
+      resource_str = optarg; // not a copy!
+      break;
+    case 'R':
+      recursive = true;
+      break;
+    case 'v':
+      verbose = true;
+      break;
+    case 'V':
+      puts(PACKAGE_STRING);
+      return 0;
+      break;
 
-      case '?':
-        if (isprint(optopt)) {
-          ulog_err("unexpectedly got option %c", optopt);
-        } else {
-          ulog_err("unknown option character `\\x%x'", optopt);
-        }
-        break;
+    case '?':
+      if (isprint(optopt)) {
+        ulog_err("unexpectedly got option %c", optopt);
+      } else {
+        ulog_err("unknown option character `\\x%x'", optopt);
+      }
+      break;
     }
   }
 
@@ -82,38 +82,44 @@ int main(int argc, char **argv) {
     return 0;
   }
 
-  if (argc - optind <= 0) {
+  const size_t arg_delta = argc - optind;
+  if (arg_delta <= 0) {
     ulog_err("you didn't specify any processes to setrlimit");
+    return 1;
+  } else if (arg_delta >= 2) {
+    ulog_err("you can only setrlimit for on process (but you can use -R for "
+             "recursive action");
     return 1;
   }
 
-  struct pids *pids = pids_new(ToLong(argv[optind]));
-  for (int i = optind; i < argc; i++) {
-    errno = 0;
-    long pid = strtol(argv[optind], NULL, 10);
-    if (errno) {
-      ulog_info("couldn't parse all args");
-      return 1;
-    }
-    if (pid >= 2) {
-      pids_push(pids, (pid_t)pid);
-    }
+  pid_t target_pid = (pid_t)ToLong(argv[optind]);
+  struct pids *pids = pids_new(target_pid);
+  for (int i = optind + 1; i < argc; i++) {
+    pids_push(pids, ToLong(argv[1]));
   }
 
   if (recursive) {
-    struct pids *rpids = list_processes(1);
-    // we can skip the first pid
-    for (size_t i = 1; i < rpids->sz; i++) {
-      pids_push(pids, rpids->pids[i]);
-      pids_delete(rpids);
-    }
+    ulog_info("in recursive branch");
+    add_processes_recursively(pids);
+  } else {
+    ulog_info("not in recursive branch");
   }
 
-  ulog_info("total pids is %d", pids->sz);
+  for (size_t i = 0; i < pids->sz; i++) {
+    printf("i = %zd, pid = %d", i, pids->pids[i]);
+  }
 
   for (int i = optind; i < argc; i++) {
+    ulog_info("i = %d, opdind = %d, argc = %d\n");
     printf("%d %s\n", optind, optarg);
+    pids_push(pids, ToLong(argv[i]));
   }
+
+  ulog_info("total pids is: %zd", pids->sz);
+  for (size_t i = 0; i < pids->sz; i++) {
+    ulog_info("%d/%d %d\n", i + 1, pids->sz, (int)pids->pids[i]);
+  }
+  ulog_info("done enumerating pids");
 
   if (resource_str != NULL) {
     resource = rlimit_by_name(resource_str);
@@ -143,8 +149,6 @@ int main(int argc, char **argv) {
 
     status |= enforce((pid_t)maybe_pid, resource);
   }
-
-  list_processes(1);
 
   return status;
 
