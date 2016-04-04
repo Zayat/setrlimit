@@ -21,6 +21,8 @@
 #include <sys/types.h>
 #include <sys/resource.h>
 
+#include "./ulog.h"
+
 static_assert(sizeof(struct rlimit) > sizeof(long), "rlimit too small");
 static_assert(sizeof(struct rlimit) % sizeof(long) == 0, "rlimit not aligned");
 

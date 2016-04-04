@@ -76,13 +76,12 @@ char** list_processes(pid_t head) {
   struct pids* targets = pids_new(head);
   struct pids* descendants = pids_new(-1);
 
-  pid_t target = pids_pop(targets);
-
   char* line = NULL;
   size_t len = 0;
-  bool target_found = true;
 
   while (true) {
+    const pid_t target = pids_pop(targets);
+    bool target_found = false;
     ulog_info("targets->sz = %d", targets->sz);
     struct dirent ent;
     struct dirent* result;
@@ -94,6 +93,7 @@ char** list_processes(pid_t head) {
       rewinddir(proc);  // amazinly, this always works
       continue;
     }
+    ulog_info("did not rewind");
 
     char* endptr;
     long pidl = strtol(ent.d_name, &endptr, 10);
@@ -104,10 +104,9 @@ char** list_processes(pid_t head) {
     assert(pidl >= 0);
     assert(pidl < LONG_MAX);
 
-    pid_t new_target = target;
     if (pidl == target) {
       pids_push(descendants, target);
-      new_target = pids_pop(targets);
+      target_found = true;
     }
     ulog_info("here");
 
@@ -123,8 +122,8 @@ char** list_processes(pid_t head) {
       perror("fopen()");
       continue;
     }
+    ulog_info("doing it");
 
-    int ppid = -1;
     while (getline(&line, &len, stream) != -1) {
       // very optimized way to check if line starts with Ppid
       puts(line);
@@ -135,6 +134,7 @@ char** list_processes(pid_t head) {
     }
 
     fclose(stream);
+    assert(target_found);
   }
 
   free(line);
