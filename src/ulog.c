@@ -25,7 +25,7 @@
 
 static int ulog_level = 0;
 
-void ulog_init(int ulog_level) { ulog_level = ulog_level; }
+void ulog_init(int min_level) { ulog_level = min_level; }
 
 #define INFO_LVL(x, min_level)                   \
   void ulog_##x(const char *fmt, ...) {          \

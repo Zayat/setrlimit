@@ -28,5 +28,5 @@ AC_CHECK_FUNCS([strtol])
 
 AC_CONFIG_FILES([Makefile
                  src/Makefile])
-AC_REVISION([m4_esyscmd([git describe --always])])
+AC_REVISION([mr_esyscmd([git describe --always])])
 AC_OUTPUT
