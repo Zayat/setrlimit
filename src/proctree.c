@@ -18,9 +18,7 @@
 #include "./proctree.h"
 
 #include <assert.h>
-#include <ctype.h>
 #include <dirent.h>
-#include <errno.h>
 #include <stdbool.h>
 #include <limits.h>
 #include <stdlib.h>

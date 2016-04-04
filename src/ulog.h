@@ -17,9 +17,7 @@
 
 #pragma once
 
-#include <stdbool.h>
-
-void ulog_init(int level);
+void ulog_init(int min_level);
 
 void ulog_info(const char *fmt, ...);
 void ulog_err(const char *fmt, ...);
