@@ -32,16 +32,18 @@
 #include "./proctree.h"
 #include "./ulog.h"
 #include "./rlim.h"
+#include "./tolong.h"
 
 int main(int argc, char **argv) {
   int c;
   int resource = -1;
   bool verbose = false;
   bool do_list = false;
+  bool recursive = false;
   opterr = 0;
   char *resource_str = NULL;
 
-  while ((c = getopt(argc, argv, "hlr:vV")) != -1) {
+  while ((c = getopt(argc, argv, "hlr:RvV")) != -1) {
     switch (c) {
       case 'h':
         goto usage;
@@ -51,6 +53,9 @@ int main(int argc, char **argv) {
         break;
       case 'r':
         resource_str = optarg;  // not a copy!
+        break;
+      case 'R':
+        recursive = true;
         break;
       case 'v':
         verbose = true;
@@ -78,7 +83,36 @@ int main(int argc, char **argv) {
   }
 
   if (argc - optind <= 0) {
-    goto usage;
+    ulog_err("you didn't specify any processes to setrlimit");
+    return 1;
+  }
+
+  struct pids *pids = pids_new(ToLong(argv[optind]));
+  for (int i = optind; i < argc; i++) {
+    errno = 0;
+    long pid = strtol(argv[optind], NULL, 10);
+    if (errno) {
+      ulog_info("couldn't parse all args");
+      return 1;
+    }
+    if (pid >= 2) {
+      pids_push(pids, (pid_t)pid);
+    }
+  }
+
+  if (recursive) {
+    struct pids *rpids = list_processes(1);
+    // we can skip the first pid
+    for (size_t i = 1; i < rpids->sz; i++) {
+      pids_push(pids, rpids->pids[i]);
+      pids_delete(rpids);
+    }
+  }
+
+  ulog_info("total pids is %d", pids->sz);
+
+  for (int i = optind; i < argc; i++) {
+    printf("%d %s\n", optind, optarg);
   }
 
   if (resource_str != NULL) {

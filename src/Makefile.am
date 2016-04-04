@@ -2,10 +2,11 @@ ENFORCE = enforce.c
 PROCTREE = proctree.c
 ULOG = ulog.c
 RLIM = rlim.c
+TOLONG = tolong.c
 
 bin_PROGRAMS = setrlimit
 AM_CFLAGS = -std=c11 -g -Wall -Wextra -Wunused -D_XOPEN_SOURCE=700 -D_DEFAULT_SOURCE
 
-setrlimit_SOURCES = main.c $(ULOG) $(RLIM) $(ENFORCE) $(PROCTREE)
+setrlimit_SOURCES = main.c $(ULOG) $(RLIM) $(ENFORCE) $(PROCTREE) $(TOLONG)
 
-noinst_HEADERS = enforce.h proctree.h rlim.h ulog.h
+noinst_HEADERS = enforce.h proctree.h rlim.h tolong.h ulog.h

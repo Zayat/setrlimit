@@ -1,3 +1,20 @@
+// Copyright Evan Klitzke <evan@eklitzke.org>, 2016
+//
+// This file is part of setrlimit.
+//
+// Setrlimit is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+//
+// Setrlimit is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU General Public License for more details.
+//
+// You should have received a copy of the GNU General Public License
+// along with Setrlimit.  If not, see <http://www.gnu.org/licenses/>.
+
 #include "./proctree.h"
 
 #include <assert.h>
@@ -11,12 +28,6 @@
 #include <stdio.h>
 
 #include "./ulog.h"
-
-struct pids {
-  pid_t* pids;
-  size_t sz;
-  size_t cap;
-};
 
 struct pids* pids_new(pid_t head) {
   struct pids* pids = malloc(sizeof(struct pids));
@@ -47,24 +58,14 @@ pid_t pids_pop(struct pids* pids) {
   return ret;
 }
 
-bool pids_contains(struct pids* pids, pid_t target) {
-  if (pids->sz == 0) {
-    return false;
-  }
-  for (size_t i = 0; i < pids->sz; i++) {
-    if (pids->pids[i] == target) {
-      return true;
-    }
-  }
-  return false;
-}
-
 void pids_delete(struct pids* pids) {
   free(pids->pids);
   free(pids);
 }
 
-char** list_processes(pid_t head) {
+// This solution is O(N^2) (the ideal solution is O(N log n) but is easy to
+// understand and doesn't use any complicated data structures.
+struct pids* list_processes(pid_t head) {
   ulog_info("in list_processes for %d", head);
   DIR* proc = opendir("/proc");
   if (proc == NULL) {
@@ -74,12 +75,12 @@ char** list_processes(pid_t head) {
 
   // this is a list of all pids we care about
   struct pids* targets = pids_new(head);
-  struct pids* descendants = pids_new(-1);
+  struct pids* descendants = pids_new(head);  // includes the head
 
   char* line = NULL;
   size_t len = 0;
 
-  while (true) {
+  while (targets->sz) {
     const pid_t target = pids_pop(targets);
     bool target_found = false;
     ulog_info("targets->sz = %d", targets->sz);
@@ -135,6 +136,10 @@ char** list_processes(pid_t head) {
 
     fclose(stream);
     assert(target_found);
+  }
+
+  for (size_t i = 0; i < descendants->sz; i++) {
+    printf("%d\n", descendants->pids[i]);
   }
 
   free(line);
