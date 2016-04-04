@@ -1,7 +1,4 @@
-#                                               -*- Autoconf -*-
-# Process this file with autoconf to produce a configure script.
-
-AC_PREREQ([2.69])
+AC_PREREQ([2.68])
 AC_INIT([statsrelay], m4_esyscmd([tr -d '\n' < VERSION]), [evan@eklitzke.org])
 AC_CONFIG_AUX_DIR([build-aux])
 AC_CONFIG_HEADERS([src/config.h])
@@ -21,7 +18,7 @@ AM_PROG_CC_C_O
 AC_CHECK_HEADERS([stdlib.h string.h])
 
 # Checks for typedefs, structures, and compiler characteristics.
-AC_CHECK_HEADER_STDBOOL
+m4_ifdef([AC_CHECK_HEADERS_STDBOOL],[AC_CHECK_HEADERS_STDBOOL])
 AC_TYPE_PID_T
 AC_TYPE_SIZE_T
 
@@ -31,5 +28,5 @@ AC_CHECK_FUNCS([strtol])
 
 AC_CONFIG_FILES([Makefile
                  src/Makefile])
-AC_REVISION([mr_esyscmd([git describe --always])])
+AC_REVISION([m4_esyscmd([git describe --always])])
 AC_OUTPUT

@@ -18,23 +18,28 @@
 #include "./tolong.h"
 
 #include <errno.h>
+#include <limits.h>
+#include <stdio.h>
+#include <stdlib.h>
 
 long ToLong(const char *s) {
-  char *s;
+  char *endptr;
   errno = 0;
-  const long val = strtol(s, s, 10);
+  const long val = strtol(s, &endptr, 10);
 
-  if (errno == ERANGE && (val == LONG_MAX || val == LONG_MIN)) _ {
-      perror("strtol: input was outside long range");
-      exit(EXIT_FAILURE);
-    }
-  if (errno == EINVAL && val == 0)) {
-      perror("strtol: ernno");
-      exit(EXIT_FAILURE);
-    }
-
-  if (endptr == str) {
+  if (errno == ERANGE && (val == LONG_MAX || val == LONG_MIN)) {
+    perror("strtol: input was outside long range");
+    exit(EXIT_FAILURE);
+  }
+  if (errno == EINVAL && val == 0) {
+    perror("strtol: ernno");
+    exit(EXIT_FAILURE);
+  }
+#if 0
+  if (*endptr == *s) {
     fprintf(stderr, "No digits were found\n");
     exit(EXIT_FAILURE);
   }
+#endif
+  return val;
 }
