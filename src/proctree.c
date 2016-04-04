@@ -92,7 +92,7 @@ void add_processes_recursively(struct pids *pids) {
         end = 0;
 
         for (size_t i = 0; i < len; i++) {
-          if (!start && isdigit(line[i]) {
+          if (!start && isdigit(line + i) {
             start = line + i;
           } else if (start && *(line + i) == '\0') {
             end = line + i;
