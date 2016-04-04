@@ -23,51 +23,33 @@
 #include <stdlib.h>
 #include <string.h>
 
-static bool ulog_verbose = 0;
+static int ulog_level = 0;
 
-// this does something naughty and trims trailing whitespace (esp. newlines form
-// format strings)
-inline bool trim_fmt(const char *fmt) {
-  bool didit = false;
-  const size_t sz = strlen(fmt);
-  char *mut_fmt = (char *)fmt;
+void ulog_init(int ulog_level) { ulog_level = ulog_level; }
 
-  size_t i = sz - 1;
-  while (true) {
-    if (isspace(mut_fmt[i])) {
-      mut_fmt[i] = '\0';
-      didit = true;
-    }
-    if (i == 0) {
-      break;
-    }
-    i--;
+#define INFO_LVL(x, min_level)                   \
+  void uulog_##x(const char *fmt, ...) {         \
+    if (ulog_level && min_level >= ulog_level) { \
+      printf(#x);                                \
+      printf(": ");                              \
+      va_list args;                              \
+      va_start(args, fmt);                       \
+      vfprintf(stdout, fmt, args);               \
+      va_end(args);                              \
+                                                 \
+      putchar('\n');                             \
+    }                                            \
   }
-  return didit;
-}
 
-void ulog_init(bool verbose) { ulog_verbose = verbose; }
+INFO_LVL(debug, 0)
 
-void ulog_info(const char *fmt, ...) {
-  if (ulog_verbose) {
-    printf("INFO: ");
-
-    va_list args;
-    va_start(args, fmt);
-    trim_fmt(fmt);
-    vfprintf(stdout, fmt, args);
-    va_end(args);
-
-    putchar('\n');
-  }
-}
+INFO_LVL(info, 10)
 
 void ulog_err(const char *fmt, ...) {
   fprintf(stderr, "ERROR: ");
 
   va_list args;
   va_start(args, fmt);
-  trim_fmt(fmt);
   vfprintf(stderr, fmt, args);
   va_end(args);
 

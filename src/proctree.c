@@ -3,6 +3,7 @@
 #include <assert.h>
 #include <ctype.h>
 #include <dirent.h>
+#include <errno.h>
 #include <stdbool.h>
 #include <limits.h>
 #include <stdlib.h>
@@ -58,8 +59,6 @@ bool pids_contains(struct pids* pids, pid_t target) {
   return false;
 }
 
-bool pids_empty(struct pids* pids) { return (pids->sz == 0); }
-
 void pids_delete(struct pids* pids) {
   free(pids->pids);
   free(pids);
@@ -75,46 +74,42 @@ char** list_processes(pid_t head) {
 
   // this is a list of all pids we care about
   struct pids* targets = pids_new(head);
+  struct pids* descendants = pids_new(-1);
+
+  pid_t target = pids_pop(targets);
 
   char* line = NULL;
   size_t len = 0;
+  bool target_found = true;
 
-  ulog_info("hi %d", targets->sz);
-  while (!pids_empty(targets)) {
+  while (true) {
+    ulog_info("targets->sz = %d", targets->sz);
     struct dirent ent;
     struct dirent* result;
 
-    const pid_t target = pids_pop(targets);
-    ulog_info("target is %d", target);
-
     readdir_r(proc, &ent, &result);
     if (result == NULL) {
-      ulog_info("failed to readdir_r");
-      break;
+      ulog_info(
+          "failed to readdir_r while still finding ancestors, rewinding;");
+      rewinddir(proc);  // amazinly, this always works
+      continue;
     }
 
-    ulog_info("name = %s, type = %d", ent.d_name, ent.d_type);
-
-    if (ent.d_type == DT_DIR) {
-      ulog_info("is dir");
-      bool all_num = true;
-      for (size_t i = 0; i < strlen(ent.d_name); i++) {
-        if (!isdigit(ent.d_name[i])) {
-          all_num = false;
-          break;
-        }
-      }
-      if (!all_num) {
-        continue;
-      }
+    char* endptr;
+    long pidl = strtol(ent.d_name, &endptr, 10);
+    if (*endptr != 0) {
+      continue;  // wasn't a numeric direcctory
     }
 
-    long pidl = strtol(ent.d_name, NULL, 10);
     assert(pidl >= 0);
     assert(pidl < LONG_MAX);
-    ulog_info("pidl = %ld\n", pidl);
 
-    pids_push(targets, (pid_t)target);
+    pid_t new_target = target;
+    if (pidl == target) {
+      pids_push(descendants, target);
+      new_target = pids_pop(targets);
+    }
+    ulog_info("here");
 
     char fname[128];
     fname[0] = 0;
@@ -122,22 +117,28 @@ char** list_processes(pid_t head) {
     strcat(fname, ent.d_name);
     strcat(fname, "/status");
 
+    ulog_info("scanning fname = %s", fname);
     FILE* stream = fopen(fname, "r");
     if (stream == NULL) {
+      perror("fopen()");
       continue;
     }
 
+    int ppid = -1;
     while (getline(&line, &len, stream) != -1) {
-      if (strstr(line, "PPid:") == line) {
+      // very optimized way to check if line starts with Ppid
+      puts(line);
+      if (line[0] == 'P' && line[1] == 'P' && line[1] == 'i' &&
+          line[3] == 'd' && line[4] == ':') {
         puts(line);
       }
     }
 
-    // redo it again
-    rewinddir(proc);
+    fclose(stream);
   }
 
   free(line);
   closedir(proc);
+  pids_delete(targets);
   return 0;
 }

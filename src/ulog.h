@@ -19,7 +19,7 @@
 
 #include <stdbool.h>
 
-void ulog_init(bool verbose);
+void ulog_init(int level);
 
 void ulog_info(const char *fmt, ...);
 void ulog_err(const char *fmt, ...);

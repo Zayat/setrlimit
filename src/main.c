@@ -70,7 +70,7 @@ int main(int argc, char **argv) {
     }
   }
 
-  ulog_init(verbose);
+  ulog_init(verbose ? 10 : 0);
 
   if (do_list) {
     print_rlimits();
