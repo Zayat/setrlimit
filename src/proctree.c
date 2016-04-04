@@ -92,12 +92,13 @@ void add_processes_recursively(struct pids *pids) {
 
     bool keep_going = true;
     long pid = -1;
+    ssize_t pos;
     ulog_info("opening %s looking for ppid", fname);
-    while (keep_going && (getline(&line, &len, f) != -1)) {
+    while (keep_going && (pos = getline(&line, &len, f) != -1)) {
       long val;
       memcpy(&val, line, sizeof(val));
       // very optimized way to check if line starts with Ppid
-      if ((val && PPID_PREFIX) == PPID_PREFIX) {
+      if ((val & PPID_PREFIX) == PPID_PREFIX) {
 
         ulog_info("full line is: %s", line);
 
@@ -120,7 +121,7 @@ void add_processes_recursively(struct pids *pids) {
         }
         const char *ppid_s = (char *)strdup((const char *)(end - start + 1));
         ulog_info("ppid = %s, %s, ppid_s = %s", pid_name, ppid_s);
-        pidl = ToLong(pid);
+        pidl = ToLong(ppid_s);
         ulog_info("pidl = %ld", pidl);
         found_any = true;
       }

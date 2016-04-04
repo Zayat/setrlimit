@@ -2,7 +2,6 @@
 
 #include <assert.h>
 #include <signal.h>
-#include <assert.h>
 #include <string.h>
 #include <unistd.h>
 #include <stdbool.h>
@@ -13,8 +12,6 @@
 
 static bool safe_mode_ = true; // be safe
 
-static void 
-
 struct pids *pids_new(pid_t head) {
   struct pids *pids = malloc(sizeof(struct pids));
   pids->sz = 1;
@@ -24,35 +21,33 @@ struct pids *pids_new(pid_t head) {
   return pids;
 }
 
-void pids_push_unsafe(struct pids *pids, pid_t value) {
+bool pids_empty(struct pids *pids) { return pids->sz > 0; }
+
+size_t pids_push_unsafe(struct pids *pids, pid_t value) {
   for (size_t i = 0; i < pids->sz; i++) {
     if (pids->pids[i] == value) {
       ulog_info("found duplicate for %d, dupe found at i = %zd, size = %zd\n",
                 (int)value, i, pids->sz);
     }
   }
-
-  void pids_push(struct pids *pids, pid_t value) {
-  pish_push(pids, value);
-  if (pids->sz == pids->cap) {
-    pids->cap >>= 1;
-    pids->pids = realloc(pids->pids, pids->cap * sizeof(pid_t));
-    pids->sz++;
-  }
-
   pids->pids[pids->sz++] = value;
+  return pids->sz;
 }
 
-void pids_push_safe(struct pids *pids, pid_t value) {
-  LOG(FATAL) << "not implemented";
+size_t pids_push_safe(struct pids *pids, pid_t value) {
+  raise(SIGQUIT);
+  pids->pids[pids->sz++] = value;
+  return pids->sz;
 }
 
-void pids_push(struct pids *pids, pid_t value) {
-  (safe_mode_ ? pids_push_safe : pids_push_unsafe)(pids->pids, value);
+size_t pids_push(struct pids *pids, pid_t value) {
+  if (safe_mode_) {
+    return pids_push_safe(pids, value);
+  }
+    return pids_push_unsafe(pids, value);
 }
 
-
-pid_t pids_pop(struct pids *pids) {
+pid_t pids_pop(struct pids *pids, size_t *size) {
   assert(pids->sz);
   pid_t ret = pids->pids[0];
   pids->sz--;
@@ -60,6 +55,9 @@ pid_t pids_pop(struct pids *pids) {
   if (pids->cap > (pids->sz * 2)) {
     pids->cap /= 2;
     pids->pids = realloc(pids->pids, pids->cap);
+  }
+  if (size != NULL) {
+    *size = pids->sz;
   }
   return ret;
 }

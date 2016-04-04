@@ -135,18 +135,25 @@ int main(int argc, char **argv) {
 
   ulog_info("final value for resource is %d", resource);
 
-  int status = 0;
   while (optind < argc) {
     errno = 0;
     long maybe_pid = strtol(argv[optind++], NULL, 10);
     if (errno) {
-      perror("failed to call strtol()");
+      ulog_err("failed to parse pid %s", argv[optind]);
+      
     }
     if (maybe_pid < 1) {
       ulog_err("cowardly refusing to trace pid %ld", maybe_pid);
     }
+    pids_push(pids, (pid_t)maybe_pid);
+  }
 
-    status |= enforce((pid_t)maybe_pid, resource);
+  int status = 0;
+  while (pids->sz) {
+    ulog_info("sz = %d", pids->sz);
+    const pid_t target = pids_pop(pids);
+    ulog_info("pid = %d", target);
+    status |= enforce(target, resource);
   }
 
   return status;
