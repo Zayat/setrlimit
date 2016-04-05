@@ -35,7 +35,7 @@ void ulog_init(int min_level) { ulog_level = min_level; }
       va_list args;                                                            \
       va_start(args, fmt);                                                     \
       vfprintf(stdout, fmt, args);                                             \
-      putchar('\n');                                                           \
+      putchar('\n');                                                    \
       va_end(args);                                                            \
       fflush(stdout);                                                          \
     }                                                                          \
@@ -45,7 +45,14 @@ INFO_LVL(debug, 0)
 
 INFO_LVL(info, 10)
 
-void ulog_err(const char *fmt, ...) {
+INFO_LVL(warn, 20)
+
+INFO_LVL(err, 30)
+
+int ulog_get_level() { return ulog_level; }
+void ulog_set_level(int level) { ulog_level = level; }
+
+void ulog_fatal(const char *fmt, ...) {
   fprintf(stderr, "ERROR: ");
 
   va_list args;

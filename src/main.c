@@ -22,6 +22,7 @@
 #include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <unistd.h>
 #include <sys/resource.h>
 
 #ifdef HAVE_CONFIG_H
@@ -29,6 +30,7 @@
 #endif
 
 #include "./enforce.h"
+#include "./pids.h"
 #include "./proctree.h"
 #include "./ulog.h"
 #include "./rlim.h"
@@ -75,7 +77,8 @@ int main(int argc, char **argv) {
     }
   }
 
-  ulog_init(verbose ? 10 : 0);
+  ulog_init(verbose ? 10 : 30);
+  ulog_info("current level is %d", ulog_get_level());
 
   if (do_list) {
     print_rlimits();
@@ -95,30 +98,29 @@ int main(int argc, char **argv) {
   pid_t target_pid = (pid_t)ToLong(argv[optind]);
   struct pids *pids = pids_new(target_pid);
   for (int i = optind + 1; i < argc; i++) {
-    pids_push(pids, ToLong(argv[1]));
-  }
-
-  if (recursive) {
-    ulog_info("in recursive branch");
-    add_processes_recursively(pids);
-  } else {
-    ulog_info("not in recursive branch");
-  }
-
-  for (size_t i = 0; i < pids->sz; i++) {
-    printf("i = %zd, pid = %d", i, pids->pids[i]);
-  }
-
-  for (int i = optind; i < argc; i++) {
-    ulog_info("i = %d, odid = %d, argc = %d, trying to push");
     pids_push(pids, ToLong(argv[i]));
   }
 
-  ulog_info("total pids is: %zd", pids->sz);
-  for (size_t i = 0; i < pids->sz; i++) {
-    ulog_info("%d/%d %d", i + 1, pids->sz, (int)pids->pids[i]);
+  if (verbose) {
+    pids_print(pids);
   }
-  ulog_info("done enumerating pids");
+
+  if (recursive) {
+    ulog_info("resursively apply limits to descendants");
+    add_processes_recursively(pids);
+  }
+
+  for (int i = optind + 1; i < argc; i++) {
+    pids_push(pids, ToLong(argv[i]));
+  }
+
+  ulog_warn("total pids to update is: %zd", pids->sz);
+  for (size_t i = 0; i < pids->sz; i++) {
+    ulog_info("%d of %d, settind pid %d", i + 1, pids->sz, (int)pids->pids[i]);
+  }
+  ulog_info("done enumerating pids sz = %d, looking for descendants", pids->sz);
+  add_processes_recursively(pids);
+  ulog_info("found descendants, sz = %d", pids->sz);
 
   if (resource_str != NULL) {
     resource = rlimit_by_name(resource_str);
@@ -135,27 +137,18 @@ int main(int argc, char **argv) {
 
   ulog_info("final value for resource is %d", resource);
 
-  while (optind < argc) {
-    errno = 0;
-    long maybe_pid = strtol(argv[optind++], NULL, 10);
-    if (errno) {
-      ulog_err("failed to parse pid %s", argv[optind]);
-      
-    }
-    if (maybe_pid < 1) {
-      ulog_err("cowardly refusing to trace pid %ld", maybe_pid);
-    }
-    pids_push(pids, (pid_t)maybe_pid);
-  }
-
   int status = 0;
   while (pids->sz) {
     ulog_info("sz = %d", pids->sz);
-    const pid_t target = pids_pop(pids);
+    const pid_t target = pids_pop(pids, NULL);
     ulog_info("pid = %d", target);
     status |= enforce(target, resource);
   }
+  if (status && geteuid() != 0) {
+    ulog_err("some processes failed, may want to retry as root");
+  }
 
+  ulog_info("exiting with status %d", status);
   return status;
 
 usage:

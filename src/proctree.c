@@ -88,10 +88,9 @@ void add_processes_recursively(struct pids *pids) {
     size_t pid_capacity = 16;
 
     const char *pid_name = malloc(pid_capacity);
-    size_t start, end;
+    size_t start = 0, end = 0;
 
     bool keep_going = true;
-    long pid = -1;
     ssize_t pos;
     ulog_info("opening %s looking for ppid", fname);
     while (keep_going && (pos = getline(&line, &len, f) != -1)) {

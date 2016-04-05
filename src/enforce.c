@@ -44,17 +44,17 @@ static void do_wait(pid_t pid) {
   assert(waited == pid);
 
   if (WIFEXITED(status)) {
-    ulog_err("unfortunately pid %d decided to exit", pid);
+    ulog_fatal("unfortunately pid %d decided to exit", pid);
   }
   if (WIFSIGNALED(status)) {
-    ulog_err("process was signalled via signal %d", WTERMSIG(status));
+    ulog_fatal("process was signalled via signal %d", WTERMSIG(status));
   }
   if (WIFSTOPPED(status)) {
     assert(WSTOPSIG(status) == SIGTRAP);
     ulog_info("status & 0x80 = %x", status & 0x80);
     ulog_info("status & (SIGTRAP | 0x80) = %x", status & (SIGTRAP | 0x80));
   } else {
-    ulog_err("pid %d did not stop", pid);
+    ulog_fatal("pid %d did not stop", pid);
   }
 }
 
@@ -123,11 +123,11 @@ int enforce(pid_t pid, int resource) {
   }
 
   if (new_regs.rip - 2 != orig.rip) {
-    ulog_err("expected rip to be increased by 2, instead the delta is %d",
+    ulog_fatal("expected rip to be increased by 2, instead the delta is %d",
              new_regs.rip - orig.rip);
   }
   if (new_regs.rax != 0) {
-    ulog_err("after kernel call rax != 0, rax = %d", (long)new_regs.rax);
+    ulog_fatal("after kernel call rax != 0, rax = %d", (long)new_regs.rax);
   }
 
   struct rlimit rlim;
@@ -168,11 +168,11 @@ int enforce(pid_t pid, int resource) {
     }
 
     if (new_regs.rip - 2 != orig.rip) {
-      ulog_err("expected rip to be increased by 2, instead the delta is %d",
+      ulog_fatal("expected rip to be increased by 2, instead the delta is %d",
                new_regs.rip - orig.rip);
     }
     if (new_regs.rax != 0) {
-      ulog_err("after kernel call rax != 0, rax = %d", (long)new_regs.rax);
+      ulog_fatal("after kernel call rax != 0, rax = %d", (long)new_regs.rax);
     }
   }
 

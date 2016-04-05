@@ -35,7 +35,6 @@ size_t pids_push_unsafe(struct pids *pids, pid_t value) {
 }
 
 size_t pids_push_safe(struct pids *pids, pid_t value) {
-  raise(SIGQUIT);
   pids->pids[pids->sz++] = value;
   return pids->sz;
 }
@@ -68,9 +67,9 @@ void pids_delete(struct pids *pids) {
 }
 
 void pids_print(struct pids *pids) {
-  printf("[sz = %zdl ]", pids->sz);
+  printf("sz = %zd:", pids->sz);
   for (size_t i = 0; i < pids->sz; i++) {
-    printf("%d ", pids->pids[i]);
+    printf(" %d", pids->pids[i]);
   }
   printf("\n");
 }

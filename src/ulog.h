@@ -19,10 +19,13 @@
 
 void ulog_init(int min_level);
 
-int ulog_get_log_level(void);
-void ulog_set_log_level(int level);
+int ulog_get_level(void);
+void ulog_set_level(int level);
 
 void ulog_debug(const char *fmt, ...);
 void ulog_info(const char *fmt, ...);
 void ulog_warn(const char *fmt, ...);
-void ulog_err(const char *fmt, ...);
+void ulog_fatal(const char *fmt, ...);
+
+// actually terminates the program
+void ulog_fatal(const char *fmt, ...);
