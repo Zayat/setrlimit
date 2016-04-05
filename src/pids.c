@@ -10,7 +10,7 @@
 
 #include "./ulog.h"
 
-static bool safe_mode_ = true; // be safe
+static bool safe_mode_ = true;  // be safe
 
 struct pids *pids_new(pid_t head) {
   struct pids *pids = malloc(sizeof(struct pids));
@@ -43,7 +43,7 @@ size_t pids_push(struct pids *pids, pid_t value) {
   if (safe_mode_) {
     return pids_push_safe(pids, value);
   }
-    return pids_push_unsafe(pids, value);
+  return pids_push_unsafe(pids, value);
 }
 
 pid_t pids_pop(struct pids *pids, size_t *size) {

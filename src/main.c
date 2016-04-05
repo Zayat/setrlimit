@@ -47,33 +47,33 @@ int main(int argc, char **argv) {
 
   while ((c = getopt(argc, argv, "hlr:RvV")) != -1) {
     switch (c) {
-    case 'h':
-      goto usage;
-      break;
-    case 'l':
-      do_list = true;
-      break;
-    case 'r':
-      resource_str = optarg; // not a copy!
-      break;
-    case 'R':
-      recursive = true;
-      break;
-    case 'v':
-      verbose = true;
-      break;
-    case 'V':
-      puts(PACKAGE_STRING);
-      return 0;
-      break;
+      case 'h':
+        goto usage;
+        break;
+      case 'l':
+        do_list = true;
+        break;
+      case 'r':
+        resource_str = optarg;  // not a copy!
+        break;
+      case 'R':
+        recursive = true;
+        break;
+      case 'v':
+        verbose = true;
+        break;
+      case 'V':
+        puts(PACKAGE_STRING);
+        return 0;
+        break;
 
-    case '?':
-      if (isprint(optopt)) {
-        ulog_err("unexpectedly got option %c", optopt);
-      } else {
-        ulog_err("unknown option character `\\x%x'", optopt);
-      }
-      break;
+      case '?':
+        if (isprint(optopt)) {
+          ulog_err("unexpectedly got option %c", optopt);
+        } else {
+          ulog_err("unknown option character `\\x%x'", optopt);
+        }
+        break;
     }
   }
 
@@ -90,8 +90,9 @@ int main(int argc, char **argv) {
     ulog_err("you didn't specify any processes to setrlimit");
     return 1;
   } else if (arg_delta >= 2) {
-    ulog_err("you can only setrlimit for on process (but you can use -R for "
-             "recursive action");
+    ulog_err(
+        "you can only setrlimit for on process (but you can use -R for "
+        "recursive action");
     return 1;
   }
 

@@ -124,7 +124,7 @@ int enforce(pid_t pid, int resource) {
 
   if (new_regs.rip - 2 != orig.rip) {
     ulog_fatal("expected rip to be increased by 2, instead the delta is %d",
-             new_regs.rip - orig.rip);
+               new_regs.rip - orig.rip);
   }
   if (new_regs.rax != 0) {
     ulog_fatal("after kernel call rax != 0, rax = %d", (long)new_regs.rax);
@@ -169,7 +169,7 @@ int enforce(pid_t pid, int resource) {
 
     if (new_regs.rip - 2 != orig.rip) {
       ulog_fatal("expected rip to be increased by 2, instead the delta is %d",
-               new_regs.rip - orig.rip);
+                 new_regs.rip - orig.rip);
     }
     if (new_regs.rax != 0) {
       ulog_fatal("after kernel call rax != 0, rax = %d", (long)new_regs.rax);

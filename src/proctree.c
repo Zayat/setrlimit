@@ -29,15 +29,13 @@
 #include "./tolong.h"
 #include "./ulog.h"
 
-
 // spells out "PPid: "
-#define PPID_PREFIX  0x507069643a000000
-
+#define PPID_PREFIX 0x507069643a000000
 
 void add_processes_recursively(struct pids *pids) {
   ulog_init(10);
   ulog_info("entered add_processes_recursively");
-  assert(pids->sz == 1); // can really be > 1, but we just handle 1 for now
+  assert(pids->sz == 1);  // can really be > 1, but we just handle 1 for now
 
   DIR *proc = opendir("/proc");
   if (proc == NULL) {
@@ -59,14 +57,14 @@ void add_processes_recursively(struct pids *pids) {
     if (result == NULL) {
       ulog_info(
           "failed to readdir_r while still finding ancestors, rewinding;");
-      rewinddir(proc); // amazinly, this always works
+      rewinddir(proc);  // amazinly, this always works
       continue;
     }
 
     char *endptr;
     pidl = strtol(ent.d_name, &endptr, 10);
     if (*endptr != 0) {
-      continue; // wasn't a numeric direcctory
+      continue;  // wasn't a numeric direcctory
     }
 
     assert(pidl >= 0);
@@ -98,9 +96,7 @@ void add_processes_recursively(struct pids *pids) {
       memcpy(&val, line, sizeof(val));
       // very optimized way to check if line starts with Ppid
       if ((val & PPID_PREFIX) == PPID_PREFIX) {
-
         ulog_info("full line is: %s", line);
-
 
         for (size_t i = 0; i < len; i++) {
           ulog_info("i = %d, len = %zd", i, len);

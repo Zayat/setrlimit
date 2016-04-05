@@ -27,18 +27,18 @@ static int ulog_level = 10;
 
 void ulog_init(int min_level) { ulog_level = min_level; }
 
-#define INFO_LVL(x, min_level)                                                 \
-  void ulog_##x(const char *fmt, ...) {                                        \
-    if (min_level >= ulog_level) {                                             \
-      printf(#x);                                                              \
-      printf(": ");                                                            \
-      va_list args;                                                            \
-      va_start(args, fmt);                                                     \
-      vfprintf(stdout, fmt, args);                                             \
-      putchar('\n');                                                    \
-      va_end(args);                                                            \
-      fflush(stdout);                                                          \
-    }                                                                          \
+#define INFO_LVL(x, min_level)          \
+  void ulog_##x(const char *fmt, ...) { \
+    if (min_level >= ulog_level) {      \
+      printf(#x);                       \
+      printf(": ");                     \
+      va_list args;                     \
+      va_start(args, fmt);              \
+      vfprintf(stdout, fmt, args);      \
+      putchar('\n');                    \
+      va_end(args);                     \
+      fflush(stdout);                   \
+    }                                   \
   }
 
 INFO_LVL(debug, 0)
