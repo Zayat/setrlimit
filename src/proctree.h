@@ -23,4 +23,4 @@
 #include "./pids.h"
 
 // add all descedants
-void add_processes_recursively(struct pids *pids);
+int add_children(struct pids *pids);

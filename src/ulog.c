@@ -24,33 +24,32 @@
 #include <string.h>
 
 static int ulog_level = 10;
-
 void ulog_init(int min_level) { ulog_level = min_level; }
-
-#define INFO_LVL(x, min_level)          \
-  void ulog_##x(const char *fmt, ...) { \
-    if (min_level >= ulog_level) {      \
-      printf(#x);                       \
-      printf(": ");                     \
-      va_list args;                     \
-      va_start(args, fmt);              \
-      vfprintf(stdout, fmt, args);      \
-      putchar('\n');                    \
-      va_end(args);                     \
-      fflush(stdout);                   \
-    }                                   \
-  }
-
-INFO_LVL(debug, 0)
-
-INFO_LVL(info, 10)
-
-INFO_LVL(warn, 20)
-
-INFO_LVL(err, 30)
 
 int ulog_get_level() { return ulog_level; }
 void ulog_set_level(int level) { ulog_level = level; }
+
+#define ULOG_LVL(x, min_level)                  \
+  void ulog_##x(const char *fmt, ...) {         \
+    if (min_level >= ulog_level) {              \
+      printf(#x);                               \
+      printf(": ");                             \
+      va_list args;                             \
+      va_start(args, fmt);                      \
+      vfprintf(stdout, fmt, args);              \
+      putchar('\n');                            \
+      va_end(args);                             \
+      fflush(stdout);                           \
+    }                                           \
+  }
+
+ULOG_LVL(debug, 0)
+
+ULOG_LVL(info, 10)
+
+ULOG_LVL(warn, 20)
+
+ULOG_LVL(err, 30)
 
 void ulog_fatal(const char *fmt, ...) {
   fprintf(stderr, "ERROR: ");

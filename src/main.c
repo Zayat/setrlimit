@@ -108,20 +108,21 @@ int main(int argc, char **argv) {
 
   if (recursive) {
     ulog_info("resursively apply limits to descendants");
-    add_processes_recursively(pids);
+    add_children(pids);
   }
 
   for (int i = optind + 1; i < argc; i++) {
     pids_push(pids, ToLong(argv[i]));
   }
 
+  ulog_info("total process size is %zd", pids->sz);
+
   ulog_warn("total pids to update is: %zd", pids->sz);
   for (size_t i = 0; i < pids->sz; i++) {
     ulog_info("%d of %d, settind pid %d", i + 1, pids->sz, (int)pids->pids[i]);
   }
   ulog_info("done enumerating pids sz = %d, looking for descendants", pids->sz);
-  add_processes_recursively(pids);
-  ulog_info("found descendants, sz = %d", pids->sz);
+
 
   if (resource_str != NULL) {
     resource = rlimit_by_name(resource_str);

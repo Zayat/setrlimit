@@ -25,7 +25,7 @@ void ulog_set_level(int level);
 void ulog_debug(const char *fmt, ...);
 void ulog_info(const char *fmt, ...);
 void ulog_warn(const char *fmt, ...);
-void ulog_fatal(const char *fmt, ...);
+void ulog_err(const char *fmt, ...);
 
 // actually terminates the program
 void ulog_fatal(const char *fmt, ...);
