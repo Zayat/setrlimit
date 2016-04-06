@@ -123,7 +123,6 @@ int main(int argc, char **argv) {
   }
   ulog_info("done enumerating pids sz = %d, looking for descendants", pids->sz);
 
-
   if (resource_str != NULL) {
     resource = rlimit_by_name(resource_str);
     if (resource == -1) {
@@ -154,6 +153,6 @@ int main(int argc, char **argv) {
   return status;
 
 usage:
-  fprintf(stderr, "usage: %s: PID...\n", argv[0]);
+  fprintf(stderr, "usage: %s: [-v] [-r] [-R resource] PID...\n", argv[0]);
   return 1;
 }
