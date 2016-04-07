@@ -36,6 +36,11 @@
 #include "./rlim.h"
 #include "./tolong.h"
 
+static inline void usage(const char *prog, int status = EXIT_FAILURE) {
+  fprintf(stderr, "usage: %s: [-v] [-r] [-R resource] PID...\n", prog);
+  exit(status);
+}
+
 int main(int argc, char **argv) {
   int c;
   int resource = -1;
@@ -45,18 +50,18 @@ int main(int argc, char **argv) {
   opterr = 0;
   char *resource_str = NULL;
 
-  while ((c = getopt(argc, argv, "hlr:RvV")) != -1) {
+  while ((c = getopt(argc, argv, "hlrR:vV")) != -1) {
     switch (c) {
       case 'h':
-        goto usage;
+        usage(argv[0]);
         break;
       case 'l':
         do_list = true;
         break;
-      case 'r':
+      case 'R':
         resource_str = optarg;  // not a copy!
         break;
-      case 'R':
+      case 'r':
         recursive = true;
         break;
       case 'v':
@@ -68,6 +73,7 @@ int main(int argc, char **argv) {
         break;
 
       case '?':
+        usage(argv[0]);
         if (isprint(optopt)) {
           ulog_err("unexpectedly got option %c", optopt);
         } else {
@@ -107,7 +113,7 @@ int main(int argc, char **argv) {
   }
 
   if (recursive) {
-    ulog_info("resursively apply limits to descendants");
+    ulog_info("recursively apply limits to descendants");
     add_children(pids);
   }
 
@@ -151,8 +157,4 @@ int main(int argc, char **argv) {
 
   ulog_info("exiting with status %d", status);
   return status;
-
-usage:
-  fprintf(stderr, "usage: %s: [-v] [-r] [-R resource] PID...\n", argv[0]);
-  return 1;
 }

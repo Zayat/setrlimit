@@ -1,14 +1,14 @@
-AM_CFLAGS = -std=c99 -Wall -Wextra -Wunused -D_XOPEN_SOURCE=700 -D_DEFAULT_SOURCE
+AM_CXXFLAGS = -std=c++0x -Wall -Wextra -Wunused -D_XOPEN_SOURCE=700 -D_DEFAULT_SOURCE
 
-ENFORCE = enforce.c
-PROCTREE = proctree.c
-ULOG = ulog.c
-RLIM = rlim.c
-TOLONG = tolong.c
-PIDS = pids.c
+ENFORCE = enforce.cc
+PROCTREE = proctree.cc
+ULOG = ulog.cc
+RLIM = rlim.cc
+TOLONG = tolong.cc
+PIDS = pids.cc
 
 bin_PROGRAMS = setrlimit
 
-setrlimit_SOURCES = main.c $(ULOG) $(RLIM) $(ENFORCE) $(PROCTREE) $(TOLONG) $(PIDS)
+setrlimit_SOURCES = main.cc $(ULOG) $(RLIM) $(ENFORCE) $(PROCTREE) $(TOLONG) $(PIDS)
 
 noinst_HEADERS = enforce.h pids.h proctree.h rlim.h tolong.h ulog.h

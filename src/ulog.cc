@@ -24,23 +24,26 @@
 #include <string.h>
 
 static int ulog_level = 10;
-void ulog_init(int min_level) { ulog_level = min_level; }
+
+void ulog_init(int min_level) {
+  ulog_level = min_level;
+  setvbuf(stdout, NULL, _IOLBF, 0);
+}
 
 int ulog_get_level() { return ulog_level; }
 void ulog_set_level(int level) { ulog_level = level; }
 
-#define ULOG_LVL(x, min_level)                  \
-  void ulog_##x(const char *fmt, ...) {         \
-    if (min_level >= ulog_level) {              \
-      printf(#x);                               \
-      printf(": ");                             \
-      va_list args;                             \
-      va_start(args, fmt);                      \
-      vfprintf(stdout, fmt, args);              \
-      putchar('\n');                            \
-      va_end(args);                             \
-      fflush(stdout);                           \
-    }                                           \
+#define ULOG_LVL(x, min_level)          \
+  void ulog_##x(const char *fmt, ...) { \
+    if (min_level >= ulog_level) {      \
+      printf(#x);                       \
+      printf(": ");                     \
+      va_list args;                     \
+      va_start(args, fmt);              \
+      vfprintf(stdout, fmt, args);      \
+      putchar('\n');                    \
+      va_end(args);                     \
+    }                                   \
   }
 
 ULOG_LVL(debug, 0)
@@ -60,6 +63,9 @@ void ulog_fatal(const char *fmt, ...) {
   va_end(args);
 
   putc('\n', stderr);
+
+  // neither of these should be necessary, but hey
+  fflush(stdout);
   fflush(stderr);
 
   exit(1);

@@ -23,4 +23,4 @@
 #include "./pids.h"
 
 // add all descedants
-int add_children(struct pids *pids);
+size_t add_children(struct pids *pids);

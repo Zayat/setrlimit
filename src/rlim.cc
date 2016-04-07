@@ -25,6 +25,8 @@
 #include <sys/resource.h>
 #include <sys/types.h>
 
+#include <memory>
+
 #include "./ulog.h"
 
 static const char *tbl[] = {"CPU",   "FSIZE",   "DATA",  "STACK",
@@ -34,10 +36,9 @@ static const char *tbl[] = {"CPU",   "FSIZE",   "DATA",  "STACK",
 // find the numeric value for a rlimit name
 int rlimit_by_name(const char *name) {
   const size_t len = strlen(name);
-  char *upper_name = malloc(len + 1);
-  upper_name[len + 1] = '\0';
+  std::unique_ptr<char[]> upper_name(new char[len + 1]);
   for (size_t i = 0; i < len; i++) {
-    upper_name[i] = toupper(name[i]);
+    upper_name.get()[i] = toupper(name[i]);
   }
 
   size_t off = 0;
@@ -46,7 +47,7 @@ int rlimit_by_name(const char *name) {
     if (s == NULL) {
       return -1;
     }
-    if (strcmp(upper_name, s) == 0) {
+    if (strcmp(upper_name.get(), s) == 0) {
       return (int)off;
     }
     off++;
