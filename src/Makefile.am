@@ -10,5 +10,6 @@ PIDS = pids.cc
 bin_PROGRAMS = setrlimit
 
 setrlimit_SOURCES = main.cc $(ULOG) $(RLIM) $(ENFORCE) $(PROCTREE) $(TOLONG) $(PIDS)
+setrlimit_LDFLAGS = $(GLOG_LIBS)
 
 noinst_HEADERS = enforce.h pids.h proctree.h rlim.h tolong.h ulog.h

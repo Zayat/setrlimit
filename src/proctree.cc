@@ -31,6 +31,8 @@
 #include <unistd.h>
 #include <sys/types.h>
 
+#include <glog/logging.h>
+
 #include <algorithm>
 #include <fstream>
 #include <iostream>
@@ -46,7 +48,7 @@
 #include "./ulog.h"
 
 size_t add_children(struct pids *pids) {
-  ulog_info("in add_children");
+  LOG(INFO) << "in add_children";
   assert(pids->sz == 1);
 
   bool first = true;
@@ -54,10 +56,10 @@ size_t add_children(struct pids *pids) {
   size_t total = 0;
   size_t loop_no = 0;
   while (true) {
-    ulog_info("in loop number %d", loop_no++);
+    LOG(INFO) << "in looop number " << loop_no++;
     size_t loop_total = 0;
     std::vector<pid_t> targets, children;
-    ulog_info("first = %d", first);
+    LOG(INFO) << "first = " << first;
     if (first) {
       first = false;
       targets.push_back(pids->pids[0]);
@@ -66,13 +68,10 @@ size_t add_children(struct pids *pids) {
         targets.push_back(pids->pids[i]);
       }
     }
-    ulog_info("add_children, s = %zd, e = %zd, targets.size() = %zd", s, e,
-              targets.size());
-
-    ulog_info("targets = %d", targets.size());
-
+    LOG(INFO) << "add_children, s = " << s << ", e = " << e
+              << ", target.size() = " << targets.size();
     for (const auto &t : targets) {
-      ulog_info("in targets");
+      LOG(INFO) << "in a targets loop of " << targets.size();
       std::stringstream ss;
       ss << "/proc/" << t << "/task/";
       const std::string task_line = ss.str();
@@ -89,11 +88,10 @@ size_t add_children(struct pids *pids) {
       struct dirent *rslt;
 
       while (true) {
-        ulog_info("task_dir = %p", task_dir);
         assert(task_dir != nullptr);
         const int ret = readdir_r(task_dir, &ent, &rslt);
         if (ret || rslt == NULL) {
-          ulog_info("finished reading directory");
+          LOG(INFO) << "finished reading directory";
           break;
         }
 
@@ -102,24 +100,28 @@ size_t add_children(struct pids *pids) {
         val = strtol(ent.d_name, &endptr, 10);
         if ((errno == ERANGE && (val == LONG_MIN || val == LONG_MAX)) ||
             (errno != 0 && val == 0)) {
-          ulog_debug("encountered not a pid");
+          LOG(INFO) << "encountered not a pid";
           continue;  // this is not a pid
         }
-        if (val <= 0) {
-          ulog_debug("cowardly refusing to handle pid %d", val);
+        if (*endptr != '\0') {
           continue;
         }
-        ulog_info("found child %ld", val);
+
+        if (val <= 0) {
+          LOG(INFO) << ent.d_name << " cowardly refusing to handle pid " << val;
+          continue;
+        }
+        LOG(INFO) << "found child " << val;
 
         pids_push(pids, val);
 
         std::stringstream sss;
         sss << task_line << val << "/children";
         const std::string s_copy = sss.str();
-        ulog_info("trying to open %s", s_copy.c_str());
+        LOG(INFO) << "trying to open " << s_copy;
         std::ifstream children_file(s_copy);
         if (!children_file.good()) {
-          ulog_info("children file not good");
+          LOG(WARNING) << "children file not good";
           continue;
         }
 
@@ -140,19 +142,21 @@ size_t add_children(struct pids *pids) {
           pids_push(pids, vchild[i]);
         }
       }
-      ulog_info("about to call closedir, looop_total = %zd", loop_total);
+      LOG(INFO) << "about to call closedir, loop_total = " << loop_total;
+
+      assert(task_dir != NULL);
       closedir(task_dir);
     }
 
-    ulog_info("%zd targets finished, loop_total = %zd", targets.size(),
-              loop_total);
+    LOG(INFO) << targets.size()
+              << " targets finished, loop_total = " << loop_total;
 
     if (loop_total) {
       s = e;
       e += loop_total;
       total += loop_total;
-      ulog_info("total = %zd, loop_total = %zd, sz = %d, s = %zd, e = %zd",
-                total, loop_total, pids->sz, s, e);
+      LOG(INFO) << "total = " << total << ", loop_total = " << loop_total
+                << ", sz = " << pids->sz << ", s = " << s << ", e = " << e;
     } else {
       break;
     }

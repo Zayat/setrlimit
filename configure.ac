@@ -13,6 +13,7 @@ AC_PROG_CC
 AC_PROG_INSTALL
 
 # Checks for libraries.
+PKG_CHECK_MODULES(GLOG, libglog)
 
 # Checks for header files.
 AC_CHECK_HEADERS([limits.h stddef.h stdlib.h string.h unistd.h])
@@ -21,12 +22,11 @@ AC_CHECK_HEADERS([limits.h stddef.h stdlib.h string.h unistd.h])
 m4_ifdef([AC_CHECK_HEADERS_STDBOOL],[AC_CHECK_HEADERS_STDBOOL])
 AC_TYPE_PID_T
 AC_TYPE_SIZE_T
-AC_TYPE_SSIZE_T
 
 # Checks for library functions.
 AC_FUNC_MALLOC
 AC_FUNC_REALLOC
-AC_CHECK_FUNCS([memmove strtol])
+AC_CHECK_FUNCS([memmove strerror strtol])
 
 AC_CONFIG_FILES([Makefile
                  src/Makefile])

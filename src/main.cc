@@ -25,6 +25,8 @@
 #include <unistd.h>
 #include <sys/resource.h>
 
+#include <glog/logging.h>
+
 #ifdef HAVE_CONFIG_H
 #include "./config.h"
 #endif
@@ -42,6 +44,8 @@ static inline void usage(const char *prog, int status = EXIT_FAILURE) {
 }
 
 int main(int argc, char **argv) {
+  google::InitGoogleLogging(argv[0]);
+
   int c;
   int resource = -1;
   bool verbose = false;
@@ -153,6 +157,10 @@ int main(int argc, char **argv) {
   }
   if (status && geteuid() != 0) {
     ulog_err("some processes failed, may want to retry as root");
+  }
+
+  for (size_t i = 0; i < pids->sz; i++) {
+    LOG(INFO) << "acted on pid " << pids->pids[i];
   }
 
   ulog_info("exiting with status %d", status);
