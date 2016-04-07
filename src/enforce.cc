@@ -22,6 +22,8 @@
 #include <sys/resource.h>
 #include <sys/user.h>
 
+#include <glog/logging.h>
+
 #include <assert.h>
 #include <errno.h>
 #include <string.h>
@@ -35,26 +37,29 @@
 
 static void do_wait(pid_t pid) {
   int status;
+  LOG(INFO) << "calling waitpid on pid " << pid;
   pid_t waited = waitpid(pid, &status, 0);
   if (waited == (pid_t)-1) {
-    perror("waitpid()");
-    exit(1);
+    LOG(WARNING) << "failed to waitpid on pid " << pid;
+    return;
   }
   assert(waited != (pid_t)-1);
   assert(waited == pid);
 
   if (WIFEXITED(status)) {
-    ulog_fatal("unfortunately pid %d decided to exit", pid);
+    LOG(FATAL) << "pid " << pid << " decided to exit";
   }
   if (WIFSIGNALED(status)) {
-    ulog_fatal("process was signalled via signal %d", WTERMSIG(status));
+    LOG(WARNING) << "pid " << pid << " received signal " << WTERMSIG(status);
   }
   if (WIFSTOPPED(status)) {
     assert(WSTOPSIG(status) == SIGTRAP);
-    ulog_info("status & 0x80 = %x", status & 0x80);
-    ulog_info("status & (SIGTRAP | 0x80) = %x", status & (SIGTRAP | 0x80));
+    LOG(INFO) << "pid " << pid << " stopped due to SIGTRAP";
+    LOG(INFO) << "status & 0x80 = " << std::hex << (status & 0x80);
+    LOG(INFO) << "status & (SIGTRAP | 0x80) = " << std::hex
+              << (status & (SIGTRAP | 0x80));
   } else {
-    ulog_fatal("pid %d did not stop", pid);
+    LOG(FATAL) << "pid " << pid << " did not stop";
   }
 }
 
