@@ -31,8 +31,6 @@ struct pids *pids_new(pid_t head);
 typedef size_t (*pusher_t)(struct pids *, pid_t value);
 
 size_t pids_push(struct pids *, pid_t value);
-size_t pids_push_safe(struct pids *, pid_t value);
-size_t pids_push_unsafe(struct pids *, pid_t value);
 
 pid_t pids_pop(struct pids *pids, size_t *size);
 

@@ -52,7 +52,9 @@ size_t add_children(struct pids *pids) {
   bool first = true;
   size_t s = 0, e = 1;
   size_t total = 0;
+  size_t loop_no = 0;
   while (true) {
+    ulog_info("in loop number %d", loop_no++);
     size_t loop_total = 0;
     std::vector<pid_t> targets, children;
     ulog_info("first = %d", first);
@@ -77,10 +79,9 @@ size_t add_children(struct pids *pids) {
 
       DIR *task_dir = opendir(task_line.c_str());
       if (task_dir == nullptr) {
-        perror("task_dir()");
-        if (errno == EPERM) {
-          continue;
-        }
+        std::cerr << "non-fatal opendir of " << task_line << ": "
+                  << strerror(errno) << "\n";
+        continue;
       }
 
       long val;
@@ -88,6 +89,8 @@ size_t add_children(struct pids *pids) {
       struct dirent *rslt;
 
       while (true) {
+        ulog_info("task_dir = %p", task_dir);
+        assert(task_dir != nullptr);
         const int ret = readdir_r(task_dir, &ent, &rslt);
         if (ret || rslt == NULL) {
           ulog_info("finished reading directory");
@@ -108,7 +111,7 @@ size_t add_children(struct pids *pids) {
         }
         ulog_info("found child %ld", val);
 
-        pids_push_safe(pids, val);
+        pids_push(pids, val);
 
         std::stringstream sss;
         sss << task_line << val << "/children";
@@ -134,12 +137,15 @@ size_t add_children(struct pids *pids) {
 
         for (size_t i = 0; i < vchild.size(); i++) {
           ulog_info("i = %zd, entry is pid %d", i, vchild[i]);
-          pids_push_safe(pids, vchild[i]);
+          pids_push(pids, vchild[i]);
         }
       }
       ulog_info("about to call closedir, looop_total = %zd", loop_total);
       closedir(task_dir);
     }
+
+    ulog_info("%zd targets finished, loop_total = %zd", targets.size(),
+              loop_total);
 
     if (loop_total) {
       s = e;
