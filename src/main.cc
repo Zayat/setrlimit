@@ -47,11 +47,11 @@ static inline void usage(const char *prog, int status = EXIT_FAILURE) {
 }
 
 int main(int argc, char **argv) {
-  gflags::SetUsageMessage("[OPTIONS] PID");
+  google::SetUsageMessage("[OPTIONS] PID");
 #ifdef HAVE_CONFIG_H
-  gflags::SetVersionString(VERSION);
+  google::SetVersionString(VERSION);
 #endif
-  gflags::ParseCommandLineFlags(&argc, &argv, true);
+  google::ParseCommandLineFlags(&argc, &argv, true);
   google::InitGoogleLogging(argv[0]);
   LOG(INFO) << "entered main";
 

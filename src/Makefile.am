@@ -12,7 +12,7 @@ GOOG_CFLAGS = $(GFLAGS_CFLAGS) $(GLOG_CFLAGS)
 bin_PROGRAMS = setrlimit
 
 setrlimit_SOURCES = main.cc $(RLIM) $(ENFORCE) $(PROCTREE) $(TOLONG) $(PIDS)
-setrlimit_LDFLAGS = $(GOOG_LIBS)
-setrlimit_CXXFLAGS = $(GOOG_CFLAGS)
+setrlimit_CXXFLAGS = $(AM_CXXFLAGS) $(GOOG_CFLAGS)
+setrlimit_LDADD = $(GOOG_LIBS)
 
 noinst_HEADERS = enforce.h pids.h proctree.h rlim.h tolong.h
