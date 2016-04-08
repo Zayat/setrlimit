@@ -1,14 +1,13 @@
 #include "./pids.h"
 
 #include <assert.h>
+#include <glog/logging.h>
 #include <signal.h>
 #include <string.h>
 #include <unistd.h>
 #include <stdbool.h>
 #include <stdlib.h>
 #include <stdio.h>
-
-#include "./ulog.h"
 
 #define DEFAULT_SZ 4
 
@@ -27,8 +26,8 @@ size_t pids_push(struct pids *pids, pid_t value) {
   bool found = false;
   for (size_t i = 0; i < pids->sz; i++) {
     if (pids->pids[i] == value) {
-      ulog_debug("found duplicate for %d, dupe found at i = %zd, size = %zd\n",
-                 (int)value, i, pids->sz);
+      VLOG(1) << "found duplicate for " << value << ", dupe found at i = " << i
+              << ", size = " << pids->sz;
       found = true;
     }
   }

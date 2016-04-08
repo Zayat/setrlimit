@@ -45,10 +45,9 @@
 #include <vector>
 
 #include "./tolong.h"
-#include "./ulog.h"
 
-size_t add_children(struct pids *pids) {
-  LOG(INFO) << "in add_children";
+size_t AddChildren(struct pids *pids) {
+  LOG(INFO) << "in AddChildren";
   assert(pids->sz == 1);
 
   bool first = true;
@@ -127,7 +126,7 @@ size_t add_children(struct pids *pids) {
 
         std::string line;
         std::getline(children_file, line);
-        ulog_info("line sz is %zd", line.size());
+        LOG(INFO) << "line sz is " << line.size();
 
         std::stringstream lss(line);
         std::vector<int> vchild{std::istream_iterator<int>(lss),
@@ -135,10 +134,10 @@ size_t add_children(struct pids *pids) {
 
         loop_total += vchild.size();
 
-        ulog_info("vchild_size %d", vchild.size());
+        LOG(INFO) << "vchild_size " << vchild.size();
 
         for (size_t i = 0; i < vchild.size(); i++) {
-          ulog_info("i = %zd, entry is pid %d", i, vchild[i]);
+          LOG(INFO) << "i = " << i << ", etnry is pid " << vchild[i];
           pids_push(pids, vchild[i]);
         }
       }

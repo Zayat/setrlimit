@@ -33,7 +33,6 @@
 #include <syscall.h>
 
 #include "./rlim.h"
-#include "./ulog.h"
 
 static void do_wait(pid_t pid) {
   int status;
@@ -64,7 +63,7 @@ static void do_wait(pid_t pid) {
 }
 
 int enforce(pid_t pid, int resource) {
-  ulog_info("pid is %d", pid);
+  LOG(INFO) << "pid is " << pid;
   if (ptrace(PTRACE_SEIZE, pid, 0, PTRACE_O_TRACESYSGOOD)) {
     perror("ptrace(PRACE_SEIZE, ...)");
     return 1;
@@ -82,7 +81,7 @@ int enforce(pid_t pid, int resource) {
     perror("ptrace(PTRACE_GETREGS, ...)");
     return 1;
   }
-  ulog_info("orig.rip = %p", orig.rip);
+  LOG(INFO) << "orig.rip = " << (void*)orig.rip;
 
   errno = 0;
   const long orig_word = ptrace(PTRACE_PEEKTEXT, pid, orig.rip, 0);
@@ -91,14 +90,14 @@ int enforce(pid_t pid, int resource) {
     return 1;
   }
 
-  ulog_info("orig word is %ld", orig_word);
+  LOG(INFO) << "orig_word is " << orig_word;
 
   if (ptrace(PTRACE_POKETEXT, pid, orig.rip, 0x050f)) {
     perror("ptrace(PTRACE_POKETEXT, ...)");
     return 1;
   }
 
-  ulog_info("poked text to prepare for syscall");
+  LOG(INFO) << "poked text to prepare for syscall";
 
   struct user_regs_struct new_regs;
   memcpy(&new_regs, &orig, sizeof(new_regs));
@@ -107,13 +106,13 @@ int enforce(pid_t pid, int resource) {
   new_regs.rdi = resource;                              // resource
   new_regs.rsi = new_regs.rsp - sizeof(struct rlimit);  // rlim
 
-  ulog_info("setting regs for syscall");
+  LOG(INFO) << "setting regs for syscall";
   if (ptrace(PTRACE_SETREGS, pid, 0, &new_regs)) {
     perror("ptrace(PTRACE_SETREGS, ...)");
     return 1;
   }
 
-  ulog_info("single setting through sys_getrlimit");
+  LOG(INFO) << "SINGLESTEPing through syscall";
   if (ptrace(PTRACE_SINGLESTEP, pid, 0, 0)) {
     perror("ptrace(PTRACE_SINGLESTEP, ...)");
     return 1;
@@ -121,28 +120,28 @@ int enforce(pid_t pid, int resource) {
 
   do_wait(pid);
 
-  ulog_info("single step succeeded, trying to get regs");
+  LOG(INFO) << "SINGLESTEP succeeded, trying to get regs";
   if (ptrace(PTRACE_GETREGS, pid, 0, &new_regs)) {
     perror("ptrace(PTRACE_GETREGS, ...)");
     return 1;
   }
 
   if (new_regs.rip - 2 != orig.rip) {
-    ulog_fatal("expected rip to be increased by 2, instead the delta is %d",
-               new_regs.rip - orig.rip);
+    LOG(FATAL) << "expected rip to be increased by 2, instead the delta is %d"
+               << new_regs.rip - orig.rip;
   }
   if (new_regs.rax != 0) {
-    ulog_fatal("after kernel call rax != 0, rax = %d", (long)new_regs.rax);
+    LOG(FATAL) << "after kernel call rax != 0, rax = %d" << (long)new_regs.rax;
   }
 
   struct rlimit rlim;
   read_rlimit(pid, new_regs.rsp - sizeof(struct rlimit), &rlim);
-  ulog_info("rlim.rlim_cur = %ld, rlim.rlim_max = %ld", rlim.rlim_cur,
-            rlim.rlim_max);
+  LOG(INFO) << "rlim.rlim_cur = " << rlim.rlim_cur
+            << ", rlim.rlim_max = " << rlim.rlim_max;
 
   if (rlim.rlim_cur == rlim.rlim_max) {
-    ulog_info("both rlim_cur and rlim_max are %ld, nothing more to do",
-              rlim.rlim_cur);
+    LOG(INFO) << "both rlim_cur and rlim_max are " << rlim.rlim_cur
+              << ", mothing more to do";
   } else {
     rlim.rlim_cur = rlim.rlim_max;
     poke_rlimit(pid, orig.rsp - sizeof(struct rlimit), &rlim);
@@ -152,13 +151,13 @@ int enforce(pid_t pid, int resource) {
     new_regs.rdi = resource;                              // resource
     new_regs.rsi = new_regs.rsp - sizeof(struct rlimit);  // rlim
 
-    ulog_info("setting regs for syscall");
+    LOG(INFO) << "setting regs for syscall";
     if (ptrace(PTRACE_SETREGS, pid, 0, &new_regs)) {
       perror("ptrace(PTRACE_SETREGS, ...)");
       return 1;
     }
 
-    ulog_info("single setting through sys_getrlimit");
+    LOG(INFO) << "SINGLESTEPPing through sys_getrlimit";
     if (ptrace(PTRACE_SINGLESTEP, pid, 0, 0)) {
       perror("ptrace(PTRACE_SINGLESTEP, ...)");
       return 1;
@@ -166,22 +165,24 @@ int enforce(pid_t pid, int resource) {
 
     do_wait(pid);
 
-    ulog_info("single step succeeded, trying to get regs");
+    LOG(INFO) << "SINGLESTEPP succeeded, trying to get regs";
     if (ptrace(PTRACE_GETREGS, pid, 0, &new_regs)) {
       perror("ptrace(PTRACE_GETREGS, ...)");
       return 1;
     }
 
     if (new_regs.rip - 2 != orig.rip) {
-      ulog_fatal("expected rip to be increased by 2, instead the delta is %d",
-                 new_regs.rip - orig.rip);
+      LOG(FATAL)
+          << "expected %rip to be increased by 2, instead the delta is %d"
+          << new_regs.rip - orig.rip;
     }
     if (new_regs.rax != 0) {
-      ulog_fatal("after kernel call rax != 0, rax = %d", (long)new_regs.rax);
+      LOG(FATAL) << "after kernel call rax != 0, rax = %d"
+                 << (long)new_regs.rax;
     }
   }
 
-  ulog_info("restoring process to original state");
+  LOG(INFO) << "restoring process to original state";
 
   if (ptrace(PTRACE_POKETEXT, pid, orig.rip, orig_word)) {
     perror("ptrace(PTRACE_POKETEXT...");

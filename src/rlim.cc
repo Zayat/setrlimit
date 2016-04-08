@@ -17,17 +17,16 @@
 
 #include <ctype.h>
 #include <errno.h>
+#include <glog/logging.h>
+#include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <stdbool.h>
 #include <string.h>
 #include <sys/ptrace.h>
 #include <sys/resource.h>
 #include <sys/types.h>
 
 #include <memory>
-
-#include "./ulog.h"
 
 static const char *tbl[] = {"CPU",   "FSIZE",   "DATA",  "STACK",
                             "CORE",  "RSS",     "NPROC", "BOFILE",
@@ -54,7 +53,6 @@ int rlimit_by_name(const char *name) {
   }
 }
 
-// read all of the rlimits and print them with ulog_info
 void print_rlimits(void) {
   size_t off = 0;
   while (true) {
@@ -62,7 +60,7 @@ void print_rlimits(void) {
     if (s == NULL) {
       break;
     }
-    ulog_info("%s (%zd)", s, off);
+    LOG(INFO) << s << " (" << off << ")";
     off++;
   }
 }
@@ -72,13 +70,13 @@ void read_rlimit(pid_t pid, unsigned long where, struct rlimit *rlim) {
   for (size_t i = 0; i < sz; i++) {
     errno = 0;
     long word = ptrace(PTRACE_PEEKTEXT, pid, where + i * sizeof(long), 0);
-    ulog_info("tried to peek for pid %d at %p", pid,
-              (void *)(where + i * sizeof(long)));
+    LOG(INFO) << "tried to peed for pid " << pid << " at "
+              << (void *)(where + i * sizeof(long));
     if (word == -1 && errno) {
       perror("ptrace(PTRACE_PEEKTEXT, ...)");
       exit(1);
     }
-    ulog_info("poking data to %p", (long *)(rlim) + i);
+    LOG(INFO) << "poking data to " << (long *)(rlim) + i;
     memcpy((long *)(rlim) + i, &word, sizeof(word));
   }
 }
@@ -88,7 +86,8 @@ void poke_rlimit(pid_t pid, unsigned long where, struct rlimit *rlim) {
   for (size_t i = 0; i < sz; i++) {
     long word;
     memcpy(&word, (long *)(rlim) + i, sizeof(word));
-    ulog_info("tried to poke %ld at %p", word, where + i * sizeof(long));
+    LOG(INFO) << "tried to poke " << word << " at "
+              << (void *)(where + i * sizeof(long));
     if (ptrace(PTRACE_POKETEXT, pid, where + i * sizeof(long), word)) {
       perror("ptrace(PTRACE_POKETEXT...)");
     }

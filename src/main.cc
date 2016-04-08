@@ -34,7 +34,6 @@
 #include "./enforce.h"
 #include "./pids.h"
 #include "./proctree.h"
-#include "./ulog.h"
 #include "./rlim.h"
 #include "./tolong.h"
 
@@ -75,20 +74,11 @@ int main(int argc, char **argv) {
         puts(PACKAGE_STRING);
         return 0;
         break;
-
       case '?':
-        usage(argv[0]);
-        if (isprint(optopt)) {
-          ulog_err("unexpectedly got option %c", optopt);
-        } else {
-          ulog_err("unknown option character `\\x%x'", optopt);
-        }
+        LOG(FATAL) << "unexpectedly got option %c" << optopt;
         break;
     }
   }
-
-  ulog_init(verbose ? 10 : 30);
-  ulog_info("current level is %d", ulog_get_level());
 
   if (do_list) {
     print_rlimits();
@@ -97,12 +87,12 @@ int main(int argc, char **argv) {
 
   const size_t arg_delta = argc - optind;
   if (arg_delta <= 0) {
-    ulog_err("you didn't specify any processes to setrlimit");
+    LOG(FATAL) << "you didn't specify any processes to setrlimit";
     return 1;
   } else if (arg_delta >= 2) {
-    ulog_err(
-        "you can only setrlimit for on process (but you can use -R for "
-        "recursive action");
+    LOG(FATAL)
+        << "you can only setrlimit for on process (but you can use -R for "
+           "recursive action";
     return 1;
   }
 
@@ -117,21 +107,21 @@ int main(int argc, char **argv) {
   }
 
   if (recursive) {
-    ulog_info("recursively apply limits to descendants");
-    add_children(pids);
+    LOG(INFO) << "recursively apply limits to descendants";
+    AddChildren(pids);
   }
 
   for (int i = optind + 1; i < argc; i++) {
     pids_push(pids, ToLong(argv[i]));
   }
 
-  ulog_info("total process size is %zd", pids->sz);
-
-  ulog_warn("total pids to update is: %zd", pids->sz);
+  LOG(INFO) << "total process size is " << pids->sz;
   for (size_t i = 0; i < pids->sz; i++) {
-    ulog_info("%d of %d, settind pid %d", i + 1, pids->sz, (int)pids->pids[i]);
+    LOG(INFO) << (i + 1) << " of " << pids->sz << ", setting pid "
+              << pids->pids[i];
   }
-  ulog_info("done enumerating pids sz = %d, looking for descendants", pids->sz);
+  LOG(INFO) << "done enumerating pids sz = " << pids->sz
+            << ", looking for descendants";
 
   if (resource_str != NULL) {
     resource = rlimit_by_name(resource_str);
@@ -142,27 +132,27 @@ int main(int argc, char **argv) {
   }
 
   if (resource < 0) {
-    ulog_info("reluctantly setting resource to RLIMIT_CORE");
+    LOG(INFO) << "reluctantly setting resource to RLIMIT_CORE";
     resource = RLIMIT_CORE;
   }
 
-  ulog_info("final value for resource is %d", resource);
+  LOG(INFO) << "final value for resource is" << resource;
 
   int status = 0;
   while (pids->sz) {
-    ulog_info("sz = %d", pids->sz);
+    LOG(INFO) << "sz = " << pids->sz;
     const pid_t target = pids_pop(pids, NULL);
-    ulog_info("pid = %d", target);
+    LOG(INFO) << "pids = " << target;
     status |= enforce(target, resource);
   }
   if (status && geteuid() != 0) {
-    ulog_err("some processes failed, may want to retry as root");
+    LOG(ERROR) << "some processes failed, may want to retry as root";
   }
 
   for (size_t i = 0; i < pids->sz; i++) {
     LOG(INFO) << "acted on pid " << pids->pids[i];
   }
 
-  ulog_info("exiting with status %d", status);
+  LOG(INFO) << "exiting with status " << status;
   return status;
 }
