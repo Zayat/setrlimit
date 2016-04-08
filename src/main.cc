@@ -25,6 +25,7 @@
 #include <unistd.h>
 #include <sys/resource.h>
 
+#include <gflags/gflags.h>
 #include <glog/logging.h>
 
 #ifdef HAVE_CONFIG_H
@@ -37,50 +38,22 @@
 #include "./rlim.h"
 #include "./tolong.h"
 
+DEFINE_int32(resource, RLIMIT_CORE, "the resource to limit");
+DEFINE_bool(recursive, false, "whether to search recursively");
+DEFINE_bool(list, false, "list rlimits");
+
 static inline void usage(const char *prog, int status = EXIT_FAILURE) {
   fprintf(stderr, "usage: %s: [-v] [-r] [-R resource] PID...\n", prog);
   exit(status);
 }
 
 int main(int argc, char **argv) {
+  gflags::SetUsageMessage("[OPTIONS] PID");
+  gflags::SetVersionString(VERSION);
+  gflags::ParseCommandLineFlags(&argc, &argv, true);
   google::InitGoogleLogging(argv[0]);
 
-  int c;
-  int resource = -1;
-  bool verbose = false;
-  bool do_list = false;
-  bool recursive = false;
-  opterr = 0;
-  char *resource_str = NULL;
-
-  while ((c = getopt(argc, argv, "hlrR:vV")) != -1) {
-    switch (c) {
-      case 'h':
-        usage(argv[0]);
-        break;
-      case 'l':
-        do_list = true;
-        break;
-      case 'R':
-        resource_str = optarg;  // not a copy!
-        break;
-      case 'r':
-        recursive = true;
-        break;
-      case 'v':
-        verbose = true;
-        break;
-      case 'V':
-        puts(PACKAGE_STRING);
-        return 0;
-        break;
-      case '?':
-        LOG(FATAL) << "unexpectedly got option %c" << optopt;
-        break;
-    }
-  }
-
-  if (do_list) {
+  if (FLAGS_list) {
     print_rlimits();
     return 0;
   }
@@ -102,11 +75,11 @@ int main(int argc, char **argv) {
     pids_push(pids, ToLong(argv[i]));
   }
 
-  if (verbose) {
+  if (FLAGS_v) {
     pids_print(pids);
   }
 
-  if (recursive) {
+  if (FLAGS_recursive) {
     LOG(INFO) << "recursively apply limits to descendants";
     AddChildren(pids);
   }
@@ -120,23 +93,10 @@ int main(int argc, char **argv) {
     LOG(INFO) << (i + 1) << " of " << pids->sz << ", setting pid "
               << pids->pids[i];
   }
-  LOG(INFO) << "done enumerating pids sz = " << pids->sz
-            << ", looking for descendants";
 
-  if (resource_str != NULL) {
-    resource = rlimit_by_name(resource_str);
-    if (resource == -1) {
-      errno = 0;
-      resource = strtol(argv[optind], NULL, 10);
-    }
-  }
+  int resource = RLIMIT_CORE;
 
-  if (resource < 0) {
-    LOG(INFO) << "reluctantly setting resource to RLIMIT_CORE";
-    resource = RLIMIT_CORE;
-  }
-
-  LOG(INFO) << "final value for resource is" << resource;
+  LOG(INFO) << "final value for resource is: " << resource;
 
   int status = 0;
   while (pids->sz) {

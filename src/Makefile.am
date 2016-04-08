@@ -6,9 +6,11 @@ RLIM = rlim.cc
 TOLONG = tolong.cc
 PIDS = pids.cc
 
+GOOG = $(GFLAGS_LIBS) $(GLOG_LIBS)
+
 bin_PROGRAMS = setrlimit
 
 setrlimit_SOURCES = main.cc $(RLIM) $(ENFORCE) $(PROCTREE) $(TOLONG) $(PIDS)
-setrlimit_LDFLAGS = $(GLOG_LIBS)
+setrlimit_LDFLAGS = $(GOOG)
 
 noinst_HEADERS = enforce.h pids.h proctree.h rlim.h tolong.h

@@ -13,6 +13,7 @@ AC_PROG_CC
 AC_PROG_INSTALL
 
 # Checks for libraries.
+PKG_CHECK_MODULES(GFLAGS, libgflags)
 PKG_CHECK_MODULES(GLOG, libglog)
 
 # Checks for header files.
