@@ -53,6 +53,7 @@ int main(int argc, char **argv) {
 #endif
   gflags::ParseCommandLineFlags(&argc, &argv, true);
   google::InitGoogleLogging(argv[0]);
+  LOG(INFO) << "entered main";
 
   if (FLAGS_list) {
     print_rlimits();
@@ -64,22 +65,21 @@ int main(int argc, char **argv) {
     return 1;
   }
 
+  LOG_IF(FATAL, argc <= 1) << "you must specify some pids to setrlimit";
   struct pids *pids = pids_blank();
-  for (int i = 0; i < argc; i++) {
+  for (int i = 1; i < argc; i++) {
     pids_push(pids, ToLong(argv[i]));
   }
+  CHECK(pids->sz);
 
-  if (FLAGS_v) {
+  if (FLAGS_list) {
     pids_print(pids);
   }
 
+  return 0;
   if (FLAGS_recursive) {
     LOG(INFO) << "recursively apply limits to descendants";
     AddChildren(pids);
-  }
-
-  for (int i = optind + 1; i < argc; i++) {
-    pids_push(pids, ToLong(argv[i]));
   }
 
   LOG(INFO) << "total process size is " << pids->sz;

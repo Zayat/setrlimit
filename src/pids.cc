@@ -29,6 +29,7 @@ struct pids *pids_new(pid_t head) {
 bool pids_empty(struct pids *pids) { return pids->sz > 0; }
 
 size_t pids_push(struct pids *pids, pid_t value) {
+  VLOG(1) << "pids_push " << value;
   bool found = false;
   for (size_t i = 0; i < pids->sz; i++) {
     if (pids->pids[i] == value) {
@@ -38,7 +39,10 @@ size_t pids_push(struct pids *pids, pid_t value) {
     }
   }
   if (!found) {
+    VLOG(1) << "pid " << value << " not found";
     pids->pids[pids->sz++] = value;
+  } else {
+    VLOG(1) << "found pid " << value;
   }
   return pids->sz;
 }
@@ -64,9 +68,8 @@ void pids_delete(struct pids *pids) {
 }
 
 void pids_print(struct pids *pids) {
-  printf("sz = %zd:", pids->sz);
+  LOG(INFO) << "sz = " << pids->sz;
   for (size_t i = 0; i < pids->sz; i++) {
-    printf(" %d", pids->pids[i]);
+    LOG(INFO) << "pid[" << i << "] = " << pids->pids[i];
   }
-  printf("\n");
 }
