@@ -11,11 +11,17 @@
 
 #define DEFAULT_SZ 4
 
-struct pids *pids_new(pid_t head) {
+struct pids *pids_blank(void) {
   struct pids *pids = (struct pids *)malloc(sizeof(struct pids) * DEFAULT_SZ);
-  pids->sz = 1;
+  pids->sz = 0;
   pids->cap = DEFAULT_SZ;
   pids->pids = (pid_t *)malloc(pids->cap * sizeof(pid_t));
+  return pids;
+}
+
+struct pids *pids_new(pid_t head) {
+  struct pids *pids = pids_blank();
+  pids->sz = 1;
   pids->pids[0] = head;
   return pids;
 }

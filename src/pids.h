@@ -26,6 +26,7 @@ struct pids {
   size_t cap;
 };
 
+struct pids *pids_blank(void);
 struct pids *pids_new(pid_t head);
 
 typedef size_t (*pusher_t)(struct pids *, pid_t value);

@@ -17,7 +17,6 @@
 
 #include <ctype.h>
 #include <errno.h>
-#include <getopt.h>
 #include <signal.h>
 #include <stdbool.h>
 #include <stdio.h>
@@ -49,7 +48,9 @@ static inline void usage(const char *prog, int status = EXIT_FAILURE) {
 
 int main(int argc, char **argv) {
   gflags::SetUsageMessage("[OPTIONS] PID");
+#ifdef HAVE_CONFIG_H
   gflags::SetVersionString(VERSION);
+#endif
   gflags::ParseCommandLineFlags(&argc, &argv, true);
   google::InitGoogleLogging(argv[0]);
 
@@ -58,20 +59,13 @@ int main(int argc, char **argv) {
     return 0;
   }
 
-  const size_t arg_delta = argc - optind;
-  if (arg_delta <= 0) {
-    LOG(FATAL) << "you didn't specify any processes to setrlimit";
-    return 1;
-  } else if (arg_delta >= 2) {
-    LOG(FATAL)
-        << "you can only setrlimit for on process (but you can use -R for "
-           "recursive action";
+  if (argc == 0) {
+    LOG(ERROR) << "usage: setrlimit [-v] [-recurisve] PID...";
     return 1;
   }
 
-  pid_t target_pid = (pid_t)ToLong(argv[optind]);
-  struct pids *pids = pids_new(target_pid);
-  for (int i = optind + 1; i < argc; i++) {
+  struct pids *pids = pids_blank();
+  for (int i = 0; i < argc; i++) {
     pids_push(pids, ToLong(argv[i]));
   }
 
