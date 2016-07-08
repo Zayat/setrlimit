@@ -61,7 +61,7 @@ int main(int argc, char **argv) {
   }
 
   if (argc == 0) {
-    LOG(ERROR) << "usage: setrlimit [-v] [-recurisve] PID...";
+    LOG(ERROR) << "usage: setrlimit [-v] [-recursive] PID...";
     return 1;
   }
 
