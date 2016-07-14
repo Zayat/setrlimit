@@ -35,7 +35,7 @@ Linux without changes.
 
 ## How Safe Is This?
 
-This code makes use of the [Intel x86-64](https://eklitzke.org/red-zone]. This
+This code makes use of the [Intel x86-64](https://eklitzke.org/red-zone). This
 is an esoteric feature and not widely used. However if you attach to a process
 that is currently using the red zone then this could corrupt its red zone stack
 contents.
